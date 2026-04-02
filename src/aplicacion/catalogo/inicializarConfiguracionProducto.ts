@@ -10,7 +10,6 @@ export function inicializarConfiguracionProducto(
 ): ConfiguracionProducto {
   const selecciones: SeleccionOpcion[] = [];
 
-  // Si no tiene grupos, retornamos configuración básica
   const grupos =
     producto.gruposAdicionesIds?.map((id) => GRUPOS_ADICIONES[id]) ?? [];
 

@@ -15,8 +15,29 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "QuickFlow",
-  description: "Pedidos rápidos por WhatsApp",
+  title: "MANDINGAS La 37",
+  description: "Pide fácil por WhatsApp y recibe tu comida rápido.",
+
+  openGraph: {
+    title: "MANDINGAS La 37",
+    description: "Arma tu pedido fácil y envíalo por WhatsApp en segundos.",
+    url: "https://quickflow-tau.vercel.app/demo",
+    siteName: "MANDINGAS",
+    images: [
+      {
+        url: "https://quickflow-tau.vercel.app/logo-demo.png",
+        width: 800,
+        height: 800,
+        alt: "Mandingas La 37",
+      },
+    ],
+    locale: "es_CO",
+    type: "website",
+  },
+
+  icons: {
+    icon: "/logo-demo.png",
+  },
 };
 
 export default function RootLayout({

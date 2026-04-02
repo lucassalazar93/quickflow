@@ -1,5 +1,5 @@
 export interface ItemCarrito {
-  id: string; // unique (producto + config)
+  id: string;
   productoId: string;
   nombre: string;
   imagen: string;
