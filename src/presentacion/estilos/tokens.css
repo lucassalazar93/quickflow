@@ -1,0 +1,49 @@
+:root {
+  --font-base: "Inter", system-ui, sans-serif;
+  --font-display: "Montserrat", system-ui, sans-serif;
+
+  --color-primario: #e1251b;
+  --color-primario-hover: #c91f17;
+  --color-secundario: #ffd54a;
+
+  --color-fondo: #f5f6f8;
+  --color-superficie: #ffffff;
+
+  --color-texto: #1a1a1a;
+  --color-texto-secundario: #6b7280;
+  --color-borde: #e5e7eb;
+
+  --sombra-suave: 0 4px 14px rgba(0, 0, 0, 0.04);
+  --sombra-media: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  --radio-xs: 8px;
+  --radio-sm: 12px;
+  --radio-md: 16px;
+  --radio-lg: 24px;
+  --radio-pill: 999px;
+
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-5: 20px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+
+  --fz-xs: 12px;
+  --fz-sm: 14px;
+  --fz-md: 16px;
+  --fz-lg: 18px;
+  --fz-xl: 20px;
+  --fz-2xl: 24px;
+  --fz-3xl: 32px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
+
+  --transition-fast: 160ms ease;
+  --transition-base: 220ms ease;
+}
