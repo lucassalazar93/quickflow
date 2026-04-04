@@ -213,7 +213,7 @@ export function HeroInicio() {
               className="hero-cta-primario"
               style={estiloBotonPrimario}
             >
-              Ver menú
+              Ver menú y hacer pedido
             </Link>
 
             <a
@@ -225,7 +225,7 @@ export function HeroInicio() {
               className="hero-cta-secundario"
               style={estiloBotonSecundario}
             >
-              Pedir por WhatsApp
+              WhatsApp
             </a>
           </div>
 

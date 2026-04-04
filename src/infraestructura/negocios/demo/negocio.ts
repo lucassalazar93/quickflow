@@ -11,4 +11,3 @@ export const negocioDemo: Negocio = {
   abierto: true,
   whatsapp: "573001234567",
 };
-

@@ -16,13 +16,13 @@
   max-height: 92vh;
   background: #fff;
   border-radius: 22px;
-  padding: 16px;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  padding: 0;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
 
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 0;
+  overflow: hidden;
 }
 
 .header {
@@ -30,6 +30,9 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #eceff2;
+  flex-shrink: 0;
 }
 
 .headerActions {
@@ -62,32 +65,36 @@
 .cerrar {
   border: 1px solid #e7e7e7;
   background: #f5f6f8;
-  border-radius: 999px;
-  width: 38px;
-  height: 38px;
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
   cursor: pointer;
   font-size: 18px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cerrar:hover {
+  background: #eceff2;
+  border-color: #d1d5db;
 }
 
 .lista {
-  flex: 1;
-  overflow-y: auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-right: 4px;
 }
 
 .formulario {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 10px;
-  border-radius: 16px;
+  padding: 12px;
+  border-radius: 14px;
   border: 1px solid #eceff2;
   background: #fafbfc;
 }
@@ -99,18 +106,26 @@
 }
 
 .toggleButton {
-  border: 1px solid #e1e4ea;
+  border: 1.5px solid #e1e4ea;
   background: #fff;
   border-radius: 12px;
-  padding: 10px 12px;
-  font-weight: 700;
+  padding: 11px 12px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
 }
 
 .toggleButton.activo {
   border-color: #e52521;
-  background: rgba(229, 37, 33, 0.08);
+  background: rgba(229, 37, 33, 0.1);
   color: #a71a16;
+  font-weight: 700;
 }
 .itemButtons {
   display: inline-flex;
@@ -121,12 +136,18 @@
   border: 1px solid #eceff2;
   background: #fff;
   border-radius: 10px;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.editarItem:hover {
+  border-color: #e1e4ea;
+  background: #f9fafb;
 }
 
 .editarItem svg {
@@ -140,18 +161,31 @@
   border-radius: 12px;
   padding: 12px 10px;
   font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   color: #1f2933;
+  min-height: 48px;
+  transition: all 0.2s ease;
+}
+
+.ctaButton:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.ctaButton:active {
+  transform: scale(0.98);
 }
 
 .ctaButtonActive {
   border-color: #e52521;
   background: rgba(229, 37, 33, 0.08);
   color: #a71a16;
+  font-weight: 700;
 }
 
 .campo {
@@ -177,14 +211,23 @@
 .select {
   border: 1px solid #e1e4ea;
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   font-size: 14px;
   font-family: inherit;
   background: #fff;
+  transition: all 0.2s ease;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  border-color: #e52521;
+  box-shadow: 0 0 0 3px rgba(229, 37, 33, 0.08);
 }
 
 .textarea {
   resize: vertical;
+  min-height: 60px;
 }
 
 .error {
@@ -237,9 +280,10 @@
 }
 
 .detalle {
-  font-size: 12px;
+  font-size: 13px;
   color: #6b6f76;
   margin: 4px 0 0;
+  padding: 8px 0;
 }
 
 .itemActions {
@@ -258,24 +302,36 @@
   border: 1px solid #eceff2;
   background: #fff;
   border-radius: 10px;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.eliminar:hover {
+  border-color: #e1e4ea;
+  background: #fff3f1;
 }
 
 .editar {
   border: 1px solid #eceff2;
   background: #fff;
   border-radius: 10px;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.editar:hover {
+  border-color: #e1e4ea;
+  background: #f9fafb;
 }
 
 .editar svg {
@@ -287,27 +343,16 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid #eceff2;
+  flex-shrink: 0;
 }
 
 .ctaGroup {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-}
-
-.ctaButton {
-  border: 1px solid #e1e4ea;
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px 10px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: #1f2933;
-  min-height: 44px;
 }
 
 .ctaIcon {
@@ -328,6 +373,16 @@
   font-weight: 700;
 }
 
+.total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2933;
+  padding: 8px 0;
+}
+
 .boton {
   width: 100%;
   background: #e52521;
@@ -336,9 +391,21 @@
   border-radius: 12px;
   padding: 14px;
   font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(229, 37, 33, 0.25);
-  min-height: 44px;
+  min-height: 48px;
+  transition: all 0.2s ease;
+}
+
+.boton:hover:not(:disabled) {
+  background: #d41f1a;
+  box-shadow: 0 14px 32px rgba(229, 37, 33, 0.35);
+  transform: translateY(-2px);
+}
+
+.boton:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .boton:disabled {
@@ -378,4 +445,14 @@
   border-radius: 14px;
   text-align: center;
   color: #6b6f76;
+}
+
+.contenedorScrolleable {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px;
 }
