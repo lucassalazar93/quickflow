@@ -6,6 +6,7 @@ type Props = {
   descripcion: string;
   precio: number;
   imagen: string;
+  onAbrir?: () => void;
   onAgregar?: () => void;
 };
 
@@ -14,8 +15,13 @@ export function TarjetaProducto({
   descripcion,
   precio,
   imagen,
+  onAbrir,
   onAgregar,
 }: Props) {
+  const handleClick = () => {
+    onAbrir?.();
+  };
+
   return (
     <article
       style={{
@@ -31,6 +37,7 @@ export function TarjetaProducto({
       }}
     >
       <div
+        onClick={handleClick}
         style={{
           width: "96px",
           height: "96px",
@@ -38,6 +45,18 @@ export function TarjetaProducto({
           overflow: "hidden",
           background: "#eef1f4",
           flexShrink: 0,
+          cursor: onAbrir ? "pointer" : "default",
+          transition: onAbrir ? "transform 0.2s ease" : "none",
+        }}
+        onMouseEnter={(e) => {
+          if (onAbrir) {
+            (e.currentTarget as HTMLElement).style.transform = "scale(1.05)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (onAbrir) {
+            (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+          }
         }}
       >
         <img
@@ -52,7 +71,24 @@ export function TarjetaProducto({
         />
       </div>
 
-      <div style={{ minWidth: 0 }}>
+      <div
+        onClick={handleClick}
+        style={{
+          minWidth: 0,
+          cursor: onAbrir ? "pointer" : "default",
+          transition: onAbrir ? "opacity 0.2s ease" : "none",
+        }}
+        onMouseEnter={(e) => {
+          if (onAbrir) {
+            (e.currentTarget as HTMLElement).style.opacity = "0.85";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (onAbrir) {
+            (e.currentTarget as HTMLElement).style.opacity = "1";
+          }
+        }}
+      >
         <h3
           style={{
             marginBottom: "6px",

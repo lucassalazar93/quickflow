@@ -8,6 +8,17 @@ export type ResultadoDomicilio = {
   mensaje: string;
 };
 
+type CalcularDomicilioParams = {
+  calle?: number | null;
+  carrera?: number | null;
+  latitud?: number | null;
+  longitud?: number | null;
+  origen?: {
+    latitud?: number;
+    longitud?: number;
+  };
+};
+
 const LIMITES_COBERTURA = {
   calleMin: 66,
   calleMax: 99,
@@ -17,11 +28,45 @@ const LIMITES_COBERTURA = {
 
 const TARIFA_MINIMA = 3000;
 
-export function calcularDomicilio(
+// Centro aproximado de cobertura en Manrique.
+// Ajusta estos valores después con la ubicación real del negocio.
+const CENTRO_COBERTURA = {
+  latitud: 6.2732,
+  longitud: -75.5516,
+};
+
+// Radios aproximados para una primera versión con coordenadas.
+// Puedes afinarlos después según pruebas reales.
+const RADIOS_COBERTURA = {
+  zona1: 0.8,
+  zona2: 1.2,
+  zona3: 1.6,
+  zona4: 2.1,
+  zona5: 2.7,
+  zona6: 3.2,
+  maximo: 4.2,
+};
+
+export function calcularDomicilio({
+  calle = null,
+  carrera = null,
+  latitud = null,
+  longitud = null,
+  origen,
+}: CalcularDomicilioParams): ResultadoDomicilio {
+  // PRIORIDAD 1: cálculo por coordenadas
+  if (latitud !== null && longitud !== null) {
+    return calcularDomicilioPorCoordenadas(latitud, longitud, origen);
+  }
+
+  // FALLBACK: cálculo por calle/carrera
+  return calcularDomicilioPorTexto(calle, carrera);
+}
+
+function calcularDomicilioPorTexto(
   calle: number | null,
   carrera: number | null,
 ): ResultadoDomicilio {
-  // 🔸 Caso 1: no detecta bien la dirección
   if (calle === null || carrera === null) {
     return {
       estado: "OK",
@@ -39,7 +84,6 @@ export function calcularDomicilio(
     carrera >= LIMITES_COBERTURA.carreraMin &&
     carrera <= LIMITES_COBERTURA.carreraMax;
 
-  // 🔸 Caso 2: fuera de cobertura
   if (!estaDentroCoberturaGlobal) {
     return {
       estado: "OK",
@@ -51,7 +95,6 @@ export function calcularDomicilio(
     };
   }
 
-  // 🔍 Buscar regla por zonas
   const reglaEncontrada = REGLAS_DOMICILIO.find((regla) => {
     return (
       calle >= regla.calleDesde &&
@@ -61,7 +104,6 @@ export function calcularDomicilio(
     );
   });
 
-  // 🔸 Caso 3: no cae en ninguna zona definida
   if (!reglaEncontrada) {
     return {
       estado: "OK",
@@ -73,7 +115,6 @@ export function calcularDomicilio(
     };
   }
 
-  // ✅ Caso correcto: dirección detectada y dentro de zona válida
   return {
     estado: "OK",
     zona: reglaEncontrada.zona,
@@ -81,4 +122,129 @@ export function calcularDomicilio(
     requiereConfirmacion: false,
     mensaje: "Domicilio confirmado según zona de cobertura.",
   };
+}
+
+function calcularDomicilioPorCoordenadas(
+  latitud: number,
+  longitud: number,
+  origen?: {
+    latitud?: number;
+    longitud?: number;
+  },
+): ResultadoDomicilio {
+  const latOrigen = origen?.latitud ?? CENTRO_COBERTURA.latitud;
+  const lngOrigen = origen?.longitud ?? CENTRO_COBERTURA.longitud;
+
+  const distanciaKm = calcularDistanciaKm(
+    latOrigen,
+    lngOrigen,
+    latitud,
+    longitud,
+  );
+
+  if (distanciaKm > RADIOS_COBERTURA.maximo) {
+    return {
+      estado: "OK",
+      zona: "Fuera de zona",
+      valor: TARIFA_MINIMA,
+      requiereConfirmacion: true,
+      mensaje:
+        "La ubicación está fuera de la cobertura habitual. El pedido requiere confirmación por parte de la tienda.",
+    };
+  }
+
+  if (distanciaKm <= RADIOS_COBERTURA.zona1) {
+    return {
+      estado: "OK",
+      zona: "Zona 1",
+      valor: 3000,
+      requiereConfirmacion: false,
+      mensaje: "Domicilio confirmado según ubicación detectada.",
+    };
+  }
+
+  if (distanciaKm <= RADIOS_COBERTURA.zona2) {
+    return {
+      estado: "OK",
+      zona: "Zona 2",
+      valor: 4000,
+      requiereConfirmacion: false,
+      mensaje: "Domicilio confirmado según ubicación detectada.",
+    };
+  }
+
+  if (distanciaKm <= RADIOS_COBERTURA.zona3) {
+    return {
+      estado: "OK",
+      zona: "Zona 3",
+      valor: 5000,
+      requiereConfirmacion: false,
+      mensaje: "Domicilio confirmado según ubicación detectada.",
+    };
+  }
+
+  if (distanciaKm <= RADIOS_COBERTURA.zona4) {
+    return {
+      estado: "OK",
+      zona: "Zona 4",
+      valor: 5000,
+      requiereConfirmacion: false,
+      mensaje: "Domicilio confirmado según ubicación detectada.",
+    };
+  }
+
+  if (distanciaKm <= RADIOS_COBERTURA.zona5) {
+    return {
+      estado: "OK",
+      zona: "Zona 5",
+      valor: 6000,
+      requiereConfirmacion: false,
+      mensaje: "Domicilio confirmado según ubicación detectada.",
+    };
+  }
+
+  if (distanciaKm <= RADIOS_COBERTURA.zona6) {
+    return {
+      estado: "OK",
+      zona: "Zona 6",
+      valor: 7000,
+      requiereConfirmacion: false,
+      mensaje: "Domicilio confirmado según ubicación detectada.",
+    };
+  }
+
+  return {
+    estado: "OK",
+    zona: "Cobertura extendida",
+    valor: TARIFA_MINIMA,
+    requiereConfirmacion: true,
+    mensaje:
+      "La ubicación está en un rango extendido y debe ser validada por la tienda.",
+  };
+}
+
+function calcularDistanciaKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const radioTierraKm = 6371;
+  const dLat = gradosARadianes(lat2 - lat1);
+  const dLng = gradosARadianes(lng2 - lng1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(gradosARadianes(lat1)) *
+      Math.cos(gradosARadianes(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return radioTierraKm * c;
+}
+
+function gradosARadianes(grados: number): number {
+  return (grados * Math.PI) / 180;
 }

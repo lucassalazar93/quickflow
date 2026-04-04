@@ -3,9 +3,16 @@
 import { useEffect, useRef } from "react";
 import styles from "./ModalCarrito.module.css";
 
+// Declarar el tipo global de google.maps sin referencia circular
 declare global {
   interface Window {
-    google?: typeof google;
+    google?: {
+      maps?: {
+        places?: {
+          Autocomplete: any;
+        };
+      };
+    };
   }
 }
 
@@ -33,8 +40,8 @@ export function InputDireccionAutocomplete({
   prefijoInicial,
 }: InputDireccionAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const listenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  const autocompleteRef = useRef<any>(null);
+  const listenerRef = useRef<any>(null);
   const scriptLoadingRef = useRef(false);
 
   useEffect(() => {

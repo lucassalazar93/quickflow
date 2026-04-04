@@ -296,12 +296,12 @@ export function ModalProducto({
             <div
               style={{
                 display: "grid",
-                gap: "8px",
+                gap: "10px",
                 gridTemplateColumns: grupo.opciones.every(
                   (opcion) => !opcion.permiteCantidad,
                 )
-                  ? "repeat(auto-fit, minmax(140px, 1fr))"
-                  : "repeat(auto-fit, minmax(220px, 1fr))",
+                  ? "repeat(auto-fit, minmax(120px, 1fr))"
+                  : "1fr",
               }}
             >
               {grupo.opciones.map((opcion) => {

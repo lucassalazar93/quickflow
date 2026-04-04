@@ -72,6 +72,37 @@ textarea,
 select,
 button {
   outline: none;
+  /* Prevenir zoom automático en iOS al hacer focus */
+  font-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+textarea,
+select {
+  /* iOS: Prevenir zoom al hacer focus */
+  font-size: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Remover estilos por defecto de iOS en inputs */
+input[type="text"]::-webkit-outer-spin-button,
+input[type="text"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 input:focus,

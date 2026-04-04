@@ -4,24 +4,32 @@ import { useMemo, useState } from "react";
 import { Pencil, Store, Trash2, Truck, X } from "lucide-react";
 import { useCarritoStore } from "@/store/carrito.store";
 import type { ItemCarrito } from "@/types/carrito";
+import type { Negocio } from "@/types/negocio";
 import { GRUPOS_ADICIONES } from "@/config/adiciones";
-import { construirEnlaceGoogleMaps } from "@/utils/construirEnlaceGoogleMaps";
 import { calcularDomicilio } from "@/dominio/domicilios/calcularDomicilio";
 import {
   extraerCalle,
   extraerCarrera,
 } from "@/dominio/domicilios/parseDireccion";
+import { construirEnlaceGoogleMaps } from "@/utils/construirEnlaceGoogleMaps";
 import styles from "./ModalCarrito.module.css";
 
 interface Props {
   abierto: boolean;
   onClose: () => void;
   onEditarItem: (item: ItemCarrito) => void;
+  negocio: Negocio;
 }
 
-export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
+export function ModalCarrito({
+  abierto,
+  onClose,
+  onEditarItem,
+  negocio,
+}: Props) {
   const items = useCarritoStore((s) => s.items);
   const eliminarItem = useCarritoStore((s) => s.eliminarItem);
+  const limpiarCarrito = useCarritoStore((s) => s.limpiar);
 
   const [tipoEntrega, setTipoEntrega] = useState<"domicilio" | "recoger">(
     "domicilio",
@@ -30,7 +38,6 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
   const [observaciones, setObservaciones] = useState("");
-  const [enlaceMaps, setEnlaceMaps] = useState("");
 
   const [metodoPago, setMetodoPago] = useState<
     "efectivo" | "transferencia" | "mixto"
@@ -54,38 +61,28 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
       };
     }
 
+    // Cálculo de domicilio basado solo en calle/carrera por texto
     const calle = extraerCalle(direccion);
     const carrera = extraerCarrera(direccion);
-    const resultado = calcularDomicilio(calle, carrera);
-
-    if (resultado.estado === "OK") {
-      return {
-        estado: "OK" as const,
-        zona: resultado.zona,
-        valor: resultado.valor,
-        requiereConfirmacion: resultado.requiereConfirmacion,
-        mensaje: resultado.mensaje,
-        calle,
-        carrera,
-      };
-    }
+    const resultado = calcularDomicilio({
+      calle,
+      carrera,
+    });
 
     return {
-      estado: resultado.estado,
-      zona: "",
-      valor: 0,
-      requiereConfirmacion: false,
-      mensaje: "",
+      estado: "OK" as const,
+      zona: resultado.zona,
+      valor: resultado.valor,
+      requiereConfirmacion: resultado.requiereConfirmacion,
+      mensaje: resultado.mensaje,
       calle,
       carrera,
     };
   }, [tipoEntrega, direccion]);
 
-  // Usar directamente el campo requiereConfirmacion del resultado
   const esDomicilioFallback =
     tipoEntrega === "domicilio" && resultadoDomicilio.requiereConfirmacion;
 
-  // Si requiere confirmación, no sumar domicilio al total
   const valorDomicilio = esDomicilioFallback ? 0 : resultadoDomicilio.valor;
   const totalFinal = subtotalProductos + valorDomicilio;
 
@@ -113,6 +110,19 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
 
   const formularioCompleto = formularioValido && metodoMixtoValido;
 
+  const limpiarCheckout = () => {
+    setNombre("");
+    setTelefono("");
+    setDireccion("");
+    setObservaciones("");
+    setMetodoPago("efectivo");
+    setMontoTransferencia("");
+    setMontoEfectivo("");
+    setTipoEntrega("domicilio");
+    setCheckoutVisible(false);
+    limpiarCarrito();
+  };
+
   const generarMensaje = () => {
     const telefonoLimpio = telefono.replace(/\D/g, "");
 
@@ -126,116 +136,111 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
           ? "Transferencia"
           : "Mixto";
 
-    // Detectar si es un caso de domicilio que requiere validación
     const esDomicilioFallback =
       tipoEntrega === "domicilio" && resultadoDomicilio.requiereConfirmacion;
 
     let mensaje = "";
 
-    mensaje += "━━━━━━━━━━━━━━━\n";
-    mensaje += "🔥 *MANDINGAS LA 37* 🔥\n";
-    mensaje += "━━━━━━━━━━━━━━━\n\n";
+    // Encabezado profesional
+    mensaje += "🍟 *MANDINGAS LA 37* 🍟\n";
+    mensaje += "_Gracias por tu pedido_\n\n";
 
-    // Agregar alerta prominente si el domicilio requiere validación
+    // Alerta si es necesario confirmación
     if (esDomicilioFallback) {
-      mensaje += "⚠️ *ATENCIÓN*\n";
-      mensaje += `${resultadoDomicilio.mensaje}\n`;
-      mensaje +=
-        "El valor del domicilio es estimado y puede ajustarse según la ubicación exacta.\n\n";
+      mensaje += "⚠️ *NOTA IMPORTANTE*\n";
+      mensaje += resultadoDomicilio.mensaje + "\n";
+      mensaje += "_El valor será confirmado al procesar tu pedido._\n\n";
     }
 
-    mensaje += "Hola, quiero confirmar el siguiente pedido:\n\n";
+    // Información del cliente
+    mensaje += "👤 *CLIENTE*\n";
+    mensaje += `Nombre: ${nombre.trim()}\n`;
+    mensaje += `Teléfono: ${telefonoLimpio}\n\n`;
 
-    mensaje += "📦 *DETALLES DEL PEDIDO*\n";
-    mensaje += `🚚 Entrega: ${tipoEntregaLabel}\n`;
-    mensaje += `🙋 Nombre: ${nombre.trim()}\n`;
-    mensaje += `📞 Teléfono: ${telefonoLimpio}\n`;
+    // Información de entrega
+    mensaje += "📍 *ENTREGA*\n";
+    mensaje += `Tipo: ${tipoEntregaLabel}\n`;
 
     if (tipoEntrega === "domicilio") {
-      mensaje += `🏠 Dirección: ${direccion.trim()}\n`;
+      mensaje += `Dirección: ${direccion.trim()}\n`;
 
-      if (resultadoDomicilio.estado === "OK") {
-        mensaje += `🧭 Zona: ${resultadoDomicilio.zona}\n`;
-        if (esDomicilioFallback) {
-          mensaje += `🛵 Domicilio estimado: $${resultadoDomicilio.valor.toLocaleString()}\n`;
-          mensaje += `📌 Validación: ${resultadoDomicilio.mensaje}\n`;
-        } else {
-          mensaje += `🛵 Domicilio: $${valorDomicilio.toLocaleString()}\n`;
+      if (direccion.trim().length > 0) {
+        const enlaceMaps = construirEnlaceGoogleMaps({
+          direccion: direccion.trim(),
+        });
+        if (enlaceMaps) {
+          mensaje += `🗺️ Ubicación: ${enlaceMaps}\n`;
         }
       }
 
-      if (enlaceMaps) {
-        mensaje += `🗺️ Mapa: ${enlaceMaps}\n`;
+      if (resultadoDomicilio.estado === "OK") {
+        mensaje += `Zona: ${resultadoDomicilio.zona}\n`;
       }
 
       if (observaciones.trim().length > 0) {
-        mensaje += `📝 Referencia: ${observaciones.trim()}\n`;
+        mensaje += `Indicaciones: ${observaciones.trim()}\n`;
       }
     }
 
     mensaje += "\n";
-    mensaje += "🍟 *PRODUCTOS*\n\n";
+
+    // Productos
+    mensaje += "🧺 *PRODUCTOS*\n";
+    mensaje += "─".repeat(40) + "\n";
 
     items.forEach((item) => {
-      mensaje += `👉 *${item.cantidad}x ${item.nombre}*\n`;
+      mensaje += `${item.cantidad}x ${item.nombre}\n`;
 
       if (item.salsas.length > 0) {
         const salsas = item.salsas.map((id) => salsasPorId.get(id) ?? id);
-        mensaje += `   🥫 Salsas: ${salsas.join(", ")}\n`;
+        mensaje += `   └─ Salsas: ${salsas.join(", ")}\n`;
       }
 
       item.adiciones.forEach((adicion) => {
-        mensaje += `   ➕ ${adicion.nombre} x${adicion.cantidad}\n`;
+        mensaje += `   └─ +${adicion.nombre} (x${adicion.cantidad})\n`;
       });
 
-      mensaje += `   💲 Subtotal: $${item.total.toLocaleString()}\n\n`;
+      mensaje += `   💲 ${item.total.toLocaleString()}\n\n`;
     });
 
+    // Datos de pago
     mensaje += "💳 *PAGO*\n";
+    mensaje += "─".repeat(40) + "\n";
     mensaje += `Método: ${metodoPagoLabel}\n`;
 
     if (metodoPago === "mixto") {
-      mensaje += `🏦 Transferencia: $${montoTransferencia.trim()}\n`;
-      mensaje += `💵 Efectivo: $${montoEfectivo.trim()}\n`;
+      mensaje += `Transferencia: $${montoTransferencia.trim()}\n`;
+      mensaje += `Efectivo: $${montoEfectivo.trim()}\n`;
     }
 
     mensaje += "\n";
-    mensaje += "━━━━━━━━━━━━━━━\n";
-    mensaje += `🍔 Subtotal productos: $${subtotalProductos.toLocaleString()}\n`;
+
+    // Resumen total
+    mensaje += "═".repeat(40) + "\n";
+    mensaje += `🧺 Subtotal: $${subtotalProductos.toLocaleString()}\n`;
 
     if (tipoEntrega === "domicilio") {
       if (esDomicilioFallback) {
-        mensaje += `🛵 Domicilio: Pendiente de confirmación\n`;
+        mensaje += "🛵 Domicilio: Por confirmar\n";
       } else {
         mensaje += `🛵 Domicilio: $${valorDomicilio.toLocaleString()}\n`;
       }
     }
 
-    mensaje += `💰 *TOTAL: $${totalFinal.toLocaleString()}*\n`;
-    mensaje += "━━━━━━━━━━━━━━━\n\n";
+    mensaje += `\n💰 *TOTAL: $${totalFinal.toLocaleString()}*\n`;
+    mensaje += "═".repeat(40) + "\n\n";
 
-    mensaje +=
-      "🤤 Quedo atento a la confirmación del pedido y al tiempo estimado de entrega.\n\n";
-    mensaje +=
-      "Gracias. Sé que lo preparan al momento y eso hace toda la diferencia. 🔥";
+    // Mensaje final personalizado
+    mensaje += "Gracias por confiar en nosotros. 🙏\n";
+    mensaje += "Tu pedido será confirmado en los próximos minutos.\n";
+    mensaje += "¡Recibirás actualizaciones por este chat! 📲";
 
     const url = `https://wa.me/573150399322?text=${encodeURIComponent(
       mensaje,
     )}`;
 
     window.open(url, "_blank");
-
-    setNombre("");
-    setTelefono("");
-    setDireccion("");
-    setObservaciones("");
-    setEnlaceMaps("");
-    setMetodoPago("efectivo");
-    setMontoTransferencia("");
-    setMontoEfectivo("");
-    setTipoEntrega("domicilio");
-    setCheckoutVisible(false);
-
+    limpiarCheckout();
     onClose();
   };
 
@@ -372,23 +377,25 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
 
                   <div className={styles.campo}>
                     <label className={styles.label} htmlFor="nombre">
-                      Nombre
+                      👤 Tu nombre
                     </label>
                     <input
                       id="nombre"
                       className={styles.input}
                       value={nombre}
                       onChange={(event) => setNombre(event.target.value)}
-                      placeholder="Tu nombre"
+                      placeholder="Ej: Juan Pérez"
                     />
                     {!nombreValido && (
-                      <p className={styles.error}>Ingresa tu nombre.</p>
+                      <p className={styles.error}>
+                        Por favor, ingresa tu nombre.
+                      </p>
                     )}
                   </div>
 
                   <div className={styles.campo}>
                     <label className={styles.label} htmlFor="telefono">
-                      Telefono
+                      📞 Teléfono de contacto
                     </label>
                     <input
                       id="telefono"
@@ -400,7 +407,7 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
                     />
                     {!telefonoValido && (
                       <p className={styles.error}>
-                        El telefono debe tener minimo 10 digitos.
+                        Necesitamos un teléfono con al menos 10 dígitos.
                       </p>
                     )}
                   </div>
@@ -409,33 +416,20 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
                     <>
                       <div className={styles.campo}>
                         <label className={styles.label} htmlFor="direccion">
-                          Direccion
+                          📍 Dirección de entrega
                         </label>
 
                         <input
                           id="direccion"
-                          type="text"
                           className={styles.input}
                           value={direccion}
-                          onChange={(event) => {
-                            const valor = event.target.value;
-                            setDireccion(valor);
-                            if (valor.trim().length > 0) {
-                              setEnlaceMaps(
-                                construirEnlaceGoogleMaps({
-                                  direccion: valor,
-                                }),
-                              );
-                            } else {
-                              setEnlaceMaps("");
-                            }
-                          }}
-                          placeholder="Ej: Calle 80 # 36-20"
+                          onChange={(event) => setDireccion(event.target.value)}
+                          placeholder="Ej: Calle 80 # 36-20, Apto 502"
                         />
 
                         {!direccionValida && (
                           <p className={styles.error}>
-                            Ingresa la direccion para el domicilio.
+                            Por favor, ingresa una dirección válida.
                           </p>
                         )}
 
@@ -453,7 +447,8 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
                           <>
                             {esDomicilioFallback ? (
                               <p className={styles.detalle}>
-                                🛵 Domicilio estimado: ${resultadoDomicilio.valor.toLocaleString()}
+                                🛵 Domicilio estimado: $
+                                {resultadoDomicilio.valor.toLocaleString()}
                               </p>
                             ) : (
                               <p className={styles.detalle}>
@@ -461,6 +456,7 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
                                 · {resultadoDomicilio.zona}
                               </p>
                             )}
+
                             {esDomicilioFallback && (
                               <p
                                 style={{
@@ -483,7 +479,7 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
 
                       <div className={styles.campo}>
                         <label className={styles.label} htmlFor="observaciones">
-                          Referencia o indicaciones
+                          💬 Indicaciones especiales (opcional)
                         </label>
                         <textarea
                           id="observaciones"
@@ -492,7 +488,7 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
                           onChange={(event) =>
                             setObservaciones(event.target.value)
                           }
-                          placeholder="Ej: Casa blanca, segundo piso, portón negro"
+                          placeholder="Ej: Casa blanca, portón negro, o cualquier indicación que nos ayude a encontrarte"
                           rows={3}
                         />
                       </div>
@@ -562,7 +558,8 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
             {items.length > 0 && (
               <div className={styles.footer}>
                 <div className={styles.total}>
-                  {esDomicilioFallback ? "Total estimado" : "Total"}: ${totalFinal.toLocaleString()}
+                  {esDomicilioFallback ? "Total estimado" : "Total"}: $
+                  {totalFinal.toLocaleString()}
                 </div>
 
                 {tipoEntrega === "domicilio" &&
@@ -571,7 +568,8 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
                     <>
                       {esDomicilioFallback ? (
                         <div className={styles.detalle}>
-                          Domicilio estimado: ${resultadoDomicilio.valor.toLocaleString()}
+                          Domicilio estimado: $
+                          {resultadoDomicilio.valor.toLocaleString()}
                         </div>
                       ) : (
                         <div className={styles.detalle}>
@@ -579,6 +577,7 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
                           {resultadoDomicilio.zona}
                         </div>
                       )}
+
                       {esDomicilioFallback && (
                         <div
                           style={{
@@ -636,7 +635,7 @@ export function ModalCarrito({ abierto, onClose, onEditarItem }: Props) {
                     disabled={!formularioCompleto}
                     type="button"
                   >
-                    Pedir ahora 🍟
+                    Pedir ahora 🛵
                   </button>
                 )}
               </div>

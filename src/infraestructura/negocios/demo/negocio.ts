@@ -10,4 +10,9 @@ export const negocioDemo: Negocio = {
   colorSecundario: "#FFD54A",
   abierto: true,
   whatsapp: "573001234567",
+
+  // datos para domicilios y mapas
+  direccion: "Carrera 37 # 79-55, Medellín, Colombia",
+  latitud: 6.2732,
+  longitud: -75.5516,
 };
