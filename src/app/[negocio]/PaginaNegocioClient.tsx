@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { actualizarCantidadProducto } from "@/aplicacion/catalogo/actualizarCantidadProducto";
 import { actualizarSeleccionGrupo } from "@/aplicacion/catalogo/actualizarSeleccionGrupo";
@@ -11,6 +11,10 @@ import type { ConfiguracionProducto } from "@/types/configuracion-producto";
 import type { ItemCarrito } from "@/types/carrito";
 import type { Negocio } from "@/types/negocio";
 import type { Categoria } from "@/types/categoria";
+import {
+  obtenerEstadoNegocio,
+  obtenerResumenHorariosVisible,
+} from "@/dominio/horarios/obtenerEstadoNegocio";
 import { EncabezadoNegocio } from "@/presentacion/componentes/negocio/EncabezadoNegocio";
 import { BotonAnimado } from "@/presentacion/componentes/comunes/BotonAnimado";
 import { TarjetaProducto } from "@/presentacion/componentes/catalogo/TarjetaProducto";
@@ -39,6 +43,7 @@ export function PaginaNegocioClient({
   const [carritoAbierto, setCarritoAbierto] = useState(false);
   const [itemEditandoId, setItemEditandoId] = useState<string | null>(null);
   const [categoriasAnimadas, setCategoriasAnimadas] = useState(true);
+  const [marcaTiempo, setMarcaTiempo] = useState(() => Date.now());
   const carruselRef = useRef<HTMLDivElement | null>(null);
   const arrastreRef = useRef({
     activo: false,
@@ -47,6 +52,24 @@ export function PaginaNegocioClient({
   });
 
   const categoriasLoop = [...categorias, ...categorias, ...categorias];
+  const estadoNegocio = useMemo(
+    () => obtenerEstadoNegocio(negocio, new Date(marcaTiempo)),
+    [negocio, marcaTiempo],
+  );
+  const resumenHorarios = useMemo(
+    () => obtenerResumenHorariosVisible(negocio),
+    [negocio],
+  );
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setMarcaTiempo(Date.now());
+    }, 60_000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
 
   const normalizarScrollCarrusel = () => {
     const carrusel = carruselRef.current;
@@ -300,7 +323,8 @@ export function PaginaNegocioClient({
         nombre={negocio.nombre}
         subtitulo={negocio.subtitulo}
         logo={negocio.logo}
-        abierto={negocio.abierto}
+        estadoNegocio={estadoNegocio}
+        resumenHorarios={resumenHorarios}
       />
 
       <section style={{ marginBottom: "24px" }}>
@@ -511,6 +535,8 @@ export function PaginaNegocioClient({
         onClose={() => setCarritoAbierto(false)}
         onEditarItem={editarItemCarrito}
         negocio={negocio}
+        estadoNegocio={estadoNegocio}
+        resumenHorarios={resumenHorarios}
       />
     </main>
   );

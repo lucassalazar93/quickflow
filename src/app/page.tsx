@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { HeroInicio } from "@/presentacion/componentes/inicio/HeroInicio";
 import { FooterQuickFlow } from "@/presentacion/componentes/inicio/FooterQuickFlow";
+import { negocioDemo } from "@/infraestructura/negocios/demo/negocio";
 
 export const metadata: Metadata = {
   title: "Mandingas La 37",
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
-      <HeroInicio />
+      <HeroInicio negocio={negocioDemo} />
       <FooterQuickFlow />
     </>
   );

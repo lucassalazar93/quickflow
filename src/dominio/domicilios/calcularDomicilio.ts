@@ -1,4 +1,5 @@
-import { REGLAS_DOMICILIO } from "./reglasDomicilio";
+import { LIMITES_COBERTURA, REGLAS_DOMICILIO } from "./reglasDomicilio";
+import { procesarDireccionUsuario } from "./parseDireccion";
 
 export type ResultadoDomicilio = {
   estado: "OK";
@@ -9,21 +10,16 @@ export type ResultadoDomicilio = {
 };
 
 type CalcularDomicilioParams = {
+  direccion?: string | null;
   calle?: number | null;
   carrera?: number | null;
   latitud?: number | null;
   longitud?: number | null;
+  usarCoordenadasFallback?: boolean;
   origen?: {
     latitud?: number;
     longitud?: number;
   };
-};
-
-const LIMITES_COBERTURA = {
-  calleMin: 66,
-  calleMax: 99,
-  carreraMin: 24,
-  carreraMax: 50,
 };
 
 const TARIFA_MINIMA = 3000;
@@ -42,25 +38,41 @@ const RADIOS_COBERTURA = {
   zona2: 1.2,
   zona3: 1.6,
   zona4: 2.1,
-  zona5: 2.7,
-  zona6: 3.2,
+  zona5: 3.2,
   maximo: 4.2,
 };
 
 export function calcularDomicilio({
+  direccion = null,
   calle = null,
   carrera = null,
   latitud = null,
   longitud = null,
+  usarCoordenadasFallback = false,
   origen,
 }: CalcularDomicilioParams): ResultadoDomicilio {
-  // PRIORIDAD 1: cálculo por coordenadas
-  if (latitud !== null && longitud !== null) {
+  if (direccion && direccion.trim().length > 0) {
+    const analisis = procesarDireccionUsuario(direccion);
+
+    return calcularDomicilioPorTexto(analisis.calle, analisis.carrera);
+  }
+
+  if (calle !== null && carrera !== null) {
+    return calcularDomicilioPorTexto(calle, carrera);
+  }
+
+  if (usarCoordenadasFallback && latitud !== null && longitud !== null) {
     return calcularDomicilioPorCoordenadas(latitud, longitud, origen);
   }
 
-  // FALLBACK: cálculo por calle/carrera
-  return calcularDomicilioPorTexto(calle, carrera);
+  return {
+    estado: "OK",
+    zona: "Dirección aproximada",
+    valor: TARIFA_MINIMA,
+    requiereConfirmacion: true,
+    mensaje:
+      "No se pudo detectar con precisión la dirección. El domicilio debe confirmarse con la tienda.",
+  };
 }
 
 function calcularDomicilioPorTexto(
@@ -187,7 +199,7 @@ function calcularDomicilioPorCoordenadas(
     return {
       estado: "OK",
       zona: "Zona 4",
-      valor: 5000,
+      valor: 6000,
       requiereConfirmacion: false,
       mensaje: "Domicilio confirmado según ubicación detectada.",
     };
@@ -197,16 +209,6 @@ function calcularDomicilioPorCoordenadas(
     return {
       estado: "OK",
       zona: "Zona 5",
-      valor: 6000,
-      requiereConfirmacion: false,
-      mensaje: "Domicilio confirmado según ubicación detectada.",
-    };
-  }
-
-  if (distanciaKm <= RADIOS_COBERTURA.zona6) {
-    return {
-      estado: "OK",
-      zona: "Zona 6",
       valor: 7000,
       requiereConfirmacion: false,
       mensaje: "Domicilio confirmado según ubicación detectada.",

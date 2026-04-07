@@ -1,186 +1,106 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  procesarDireccionUsuario,
+  type AnalisisDireccion,
+} from "@/dominio/domicilios/parseDireccion";
 import styles from "./ModalCarrito.module.css";
 
-// Declarar el tipo global de google.maps sin referencia circular
-declare global {
-  interface Window {
-    google?: {
-      maps?: {
-        places?: {
-          Autocomplete: any;
-        };
-      };
-    };
-  }
-}
-
 interface InputDireccionAutocompleteProps {
+  id?: string;
   value: string;
   onChangeDireccion: (value: string) => void;
-  onSeleccionarDireccion: ({
-    direccionCompleta,
-    latitud,
-    longitud,
-  }: {
-    direccionCompleta: string;
-    latitud?: number;
-    longitud?: number;
-  }) => void;
+  onSeleccionarDireccion: (direccionFinal: string) => void;
+  onAnalisisDireccion?: (analisis: AnalisisDireccion) => void;
   placeholder?: string;
-  prefijoInicial?: string;
+  debounceMs?: number;
 }
 
 export function InputDireccionAutocomplete({
+  id,
   value,
   onChangeDireccion,
   onSeleccionarDireccion,
+  onAnalisisDireccion,
   placeholder = "Calle 79 # 43-04",
-  prefijoInicial,
+  debounceMs = 400,
 }: InputDireccionAutocompleteProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
-  const listenerRef = useRef<any>(null);
-  const scriptLoadingRef = useRef(false);
+  const [analisisDebounced, setAnalisisDebounced] =
+    useState<AnalisisDireccion | null>(null);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const inicializar = async () => {
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-      if (!apiKey || !inputRef.current) return;
-
-      try {
-        if (!window.google?.maps?.places && !scriptLoadingRef.current) {
-          scriptLoadingRef.current = true;
-          await cargarGoogleMaps(apiKey);
-          scriptLoadingRef.current = false;
-        } else if (!window.google?.maps?.places && scriptLoadingRef.current) {
-          await esperarGoogleMaps();
-        }
-
-        if (
-          cancelled ||
-          !inputRef.current ||
-          !window.google?.maps?.places ||
-          autocompleteRef.current
-        ) {
-          return;
-        }
-
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(
-          inputRef.current,
-          {
-            types: ["address"],
-            componentRestrictions: { country: "co" },
-            fields: ["formatted_address", "geometry"],
-          },
-        );
-
-        listenerRef.current = autocompleteRef.current.addListener(
-          "place_changed",
-          () => {
-            const place = autocompleteRef.current?.getPlace();
-            if (!place) return;
-
-            const direccionCompleta =
-              place.formatted_address ?? inputRef.current?.value ?? "";
-
-            const latitud = place.geometry?.location?.lat();
-            const longitud = place.geometry?.location?.lng();
-
-            onChangeDireccion(direccionCompleta);
-
-            onSeleccionarDireccion({
-              direccionCompleta,
-              latitud,
-              longitud,
-            });
-          },
-        );
-      } catch (error) {
-        console.error("No se pudo inicializar Google Places:", error);
-      }
-    };
-
-    inicializar();
+    const timer = window.setTimeout(() => {
+      const analisis = procesarDireccionUsuario(value);
+      setAnalisisDebounced(analisis);
+      onAnalisisDireccion?.(analisis);
+      setMostrarSugerencias(value.trim().length > 0);
+    }, debounceMs);
 
     return () => {
-      cancelled = true;
-
-      if (listenerRef.current) {
-        listenerRef.current.remove();
-        listenerRef.current = null;
-      }
+      window.clearTimeout(timer);
     };
-  }, [onChangeDireccion, onSeleccionarDireccion]);
+  }, [debounceMs, onAnalisisDireccion, value]);
 
-  const handleFocus = () => {
-    if (prefijoInicial && !value.trim()) {
-      onChangeDireccion(prefijoInicial);
+  const sugerencias = useMemo(() => {
+    if (!analisisDebounced) {
+      return [];
     }
-  };
+
+    return analisisDebounced.sugerencias;
+  }, [analisisDebounced]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onChangeDireccion(event.target.value);
+    setMostrarSugerencias(true);
+  };
+
+  const seleccionarSugerencia = (sugerencia: string) => {
+    onChangeDireccion(sugerencia);
+    onSeleccionarDireccion(sugerencia);
+    setMostrarSugerencias(false);
   };
 
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      className={styles.input}
-      value={value}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      placeholder={placeholder}
-      autoComplete="off"
-    />
+    <div className={styles.autoWrap}>
+      <input
+        id={id}
+        type="text"
+        className={styles.input}
+        value={value}
+        onChange={handleChange}
+        onFocus={() => setMostrarSugerencias(true)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+
+      {analisisDebounced?.direccionInterpretada && (
+        <p className={styles.ayudaDireccion}>
+          Dirección interpretada: {analisisDebounced.direccionInterpretada}
+        </p>
+      )}
+
+      {mostrarSugerencias && sugerencias.length > 0 && (
+        <div className={styles.sugerencias}>
+          {sugerencias.map((sugerencia) => (
+            <button
+              key={sugerencia}
+              type="button"
+              className={styles.sugerenciaItem}
+              onClick={() => seleccionarSugerencia(sugerencia)}
+            >
+              {sugerencia}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {analisisDebounced?.requiereConfirmacion && (
+        <p className={styles.alertaDireccion}>
+          {analisisDebounced.motivoConfirmacion}
+        </p>
+      )}
+    </div>
   );
-}
-
-async function cargarGoogleMaps(apiKey: string) {
-  const scriptId = "google-maps-script";
-
-  const existente = document.getElementById(scriptId);
-  if (existente) {
-    await esperarGoogleMaps();
-    return;
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.id = scriptId;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("No se pudo cargar Google Maps"));
-    document.head.appendChild(script);
-  });
-
-  await esperarGoogleMaps();
-}
-
-async function esperarGoogleMaps() {
-  await new Promise<void>((resolve, reject) => {
-    let intentos = 0;
-
-    const interval = window.setInterval(() => {
-      intentos += 1;
-
-      if (window.google?.maps?.places) {
-        window.clearInterval(interval);
-        resolve();
-        return;
-      }
-
-      if (intentos > 100) {
-        window.clearInterval(interval);
-        reject(new Error("Google Maps no estuvo disponible a tiempo"));
-      }
-    }, 100);
-  });
 }

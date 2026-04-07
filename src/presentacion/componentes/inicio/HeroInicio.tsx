@@ -1,4 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import {
+  obtenerEstadoNegocio,
+  obtenerResumenHorariosVisible,
+} from "@/dominio/horarios/obtenerEstadoNegocio";
+import { PanelHorarios } from "@/presentacion/componentes/comunes/PanelHorarios";
+import type { Negocio } from "@/types/negocio";
 
 const estiloBotonPrimario = {
   display: "inline-block",
@@ -37,7 +46,60 @@ const estiloBotonSecundario = {
   zIndex: 10,
 };
 
-export function HeroInicio() {
+type HeroInicioProps = {
+  negocio: Negocio;
+};
+
+export function HeroInicio({ negocio }: HeroInicioProps) {
+  const [marcaTiempo, setMarcaTiempo] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setMarcaTiempo(Date.now());
+    }, 60_000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const estadoNegocio = useMemo(
+    () => obtenerEstadoNegocio(negocio, new Date(marcaTiempo)),
+    [marcaTiempo, negocio],
+  );
+  const resumenHorarios = useMemo(
+    () => obtenerResumenHorariosVisible(negocio),
+    [negocio],
+  );
+
+  const labelEstado =
+    estadoNegocio.estado === "cerrado" ? "Cerrado" : "Abierto ahora";
+  const claseEstado =
+    estadoNegocio.estado === "cerrado"
+      ? {
+          background: "rgba(107, 114, 128, 0.14)",
+          border: "1px solid rgba(107, 114, 128, 0.36)",
+          color: "#4b5563",
+        }
+      : {
+          background: "rgba(34, 197, 94, 0.12)",
+          border: "1px solid rgba(34, 197, 94, 0.35)",
+          color: "#15803d",
+        };
+
+  const subtituloEstado =
+    estadoNegocio.estado === "domicilios_no_disponibles"
+      ? "Domicilios desde las 7:40 PM"
+      : estadoNegocio.estado === "domicilios_cerrados"
+        ? "Domicilios cerrados por hoy"
+        : estadoNegocio.estado === "cerrado"
+          ? "Volvemos a las 6:00 PM"
+          : null;
+
+  const ctaPedidoLabel =
+    estadoNegocio.estado === "cerrado"
+      ? "Ver menú (cerrado ahora)"
+      : "Ver menú y hacer pedido";
   return (
     <>
       <style>{`
@@ -111,7 +173,7 @@ export function HeroInicio() {
           >
             <img
               src="/logo-demo.png"
-              alt="Mandingas La 37"
+              alt={negocio.nombre}
               style={{
                 width: "100%",
                 height: "100%",
@@ -130,7 +192,7 @@ export function HeroInicio() {
                 lineHeight: 1.05,
               }}
             >
-              MANDINGAS La 37
+              {negocio.nombre}
             </h1>
 
             <p
@@ -142,8 +204,7 @@ export function HeroInicio() {
                 margin: "0 auto",
               }}
             >
-              Arma tu pedido fácil, elige tus productos favoritos y envíalo por
-              WhatsApp en pocos pasos.
+              {negocio.subtitulo}
             </p>
           </div>
 
@@ -159,15 +220,31 @@ export function HeroInicio() {
               style={{
                 padding: "8px 14px",
                 borderRadius: "999px",
-                background: "rgba(34, 197, 94, 0.12)",
-                border: "1px solid rgba(34, 197, 94, 0.35)",
-                color: "#15803d",
+                background: claseEstado.background,
+                border: claseEstado.border,
+                color: claseEstado.color,
                 fontWeight: 700,
                 fontSize: "13px",
               }}
             >
-              Abierto ahora
+              {labelEstado}
             </span>
+
+            {subtituloEstado && (
+              <span
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "999px",
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  color: "#374151",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                }}
+              >
+                {subtituloEstado}
+              </span>
+            )}
 
             <span
               style={{
@@ -208,16 +285,18 @@ export function HeroInicio() {
               marginTop: "6px",
             }}
           >
+            <PanelHorarios resumenHorarios={resumenHorarios} label="Horarios" />
+
             <Link
               href="/demo"
               className="hero-cta-primario"
               style={estiloBotonPrimario}
             >
-              Ver menú y hacer pedido
+              {ctaPedidoLabel}
             </Link>
 
             <a
-              href={`https://wa.me/573150399322?text=${encodeURIComponent(
+              href={`https://wa.me/${negocio.whatsapp}?text=${encodeURIComponent(
                 "Hola, quiero realizar un pedido. Me puedes ayudar con el menu y precios?",
               )}`}
               target="_blank"

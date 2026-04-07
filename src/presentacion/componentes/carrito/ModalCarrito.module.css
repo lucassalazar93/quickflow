@@ -44,6 +44,32 @@
   gap: 8px;
 }
 
+.estadoBanner {
+  margin: 0 12px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #eceff2;
+}
+
+.estadoBannerActivo {
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.estadoBannerBloqueado {
+  color: #9a3412;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.horariosCardWrap {
+  margin: 8px 12px 0;
+}
+
 .titleRow {
   display: flex;
   align-items: center;
@@ -240,6 +266,60 @@
   border-color: #e52521;
   box-shadow: 0 0 0 3px rgba(229, 37, 33, 0.1);
   outline: none;
+}
+
+.autoWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ayudaDireccion {
+  margin: 0;
+  font-size: 12px;
+  color: #4b5563;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.sugerencias {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.sugerenciaItem {
+  width: 100%;
+  border: 0;
+  background: #fff;
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.sugerenciaItem + .sugerenciaItem {
+  border-top: 1px solid #f1f5f9;
+}
+
+.sugerenciaItem:hover {
+  background: #f8fafc;
+}
+
+.alertaDireccion {
+  margin: 0;
+  font-size: 12px;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 3px solid #f59e0b;
+  border-radius: 8px;
+  padding: 8px 10px;
 }
 
 .textarea {
@@ -486,6 +566,10 @@
     padding: 14px 16px;
     padding-bottom: calc(14px + env(safe-area-inset-bottom));
     gap: 10px;
+  }
+
+  .horariosCardWrap {
+    margin: 8px 10px 0;
   }
 
   .boton {

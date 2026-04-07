@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pencil, Store, Trash2, Truck, X } from "lucide-react";
 import { useCarritoStore } from "@/store/carrito.store";
 import type { ItemCarrito } from "@/types/carrito";
@@ -8,10 +8,14 @@ import type { Negocio } from "@/types/negocio";
 import { GRUPOS_ADICIONES } from "@/config/adiciones";
 import { calcularDomicilio } from "@/dominio/domicilios/calcularDomicilio";
 import {
-  extraerCalle,
-  extraerCarrera,
-} from "@/dominio/domicilios/parseDireccion";
+  obtenerNotaWhatsAppSegunEstado,
+  type ResumenHorariosVisible,
+  type ResultadoEstadoNegocio,
+} from "@/dominio/horarios/obtenerEstadoNegocio";
+import { procesarDireccionUsuario } from "@/dominio/domicilios/parseDireccion";
 import { construirEnlaceGoogleMaps } from "@/utils/construirEnlaceGoogleMaps";
+import { PanelHorarios } from "@/presentacion/componentes/comunes/PanelHorarios";
+import { InputDireccionAutocomplete } from "./InputDireccionAutocomplete";
 import styles from "./ModalCarrito.module.css";
 
 interface Props {
@@ -19,6 +23,8 @@ interface Props {
   onClose: () => void;
   onEditarItem: (item: ItemCarrito) => void;
   negocio: Negocio;
+  estadoNegocio: ResultadoEstadoNegocio;
+  resumenHorarios: ResumenHorariosVisible;
 }
 
 export function ModalCarrito({
@@ -26,6 +32,8 @@ export function ModalCarrito({
   onClose,
   onEditarItem,
   negocio,
+  estadoNegocio,
+  resumenHorarios,
 }: Props) {
   const items = useCarritoStore((s) => s.items);
   const eliminarItem = useCarritoStore((s) => s.eliminarItem);
@@ -47,6 +55,10 @@ export function ModalCarrito({
   const [checkoutVisible, setCheckoutVisible] = useState(false);
 
   const subtotalProductos = items.reduce((acc, item) => acc + item.total, 0);
+  const analisisDireccion = useMemo(
+    () => procesarDireccionUsuario(direccion),
+    [direccion],
+  );
 
   const resultadoDomicilio = useMemo(() => {
     if (tipoEntrega !== "domicilio") {
@@ -60,13 +72,15 @@ export function ModalCarrito({
         carrera: null as number | null,
       };
     }
+    const direccionCalculo =
+      analisisDireccion.direccionInterpretada.trim().length > 0
+        ? analisisDireccion.direccionInterpretada
+        : direccion;
 
-    // Cálculo de domicilio basado solo en calle/carrera por texto
-    const calle = extraerCalle(direccion);
-    const carrera = extraerCarrera(direccion);
+    const calle = analisisDireccion.calle;
+    const carrera = analisisDireccion.carrera;
     const resultado = calcularDomicilio({
-      calle,
-      carrera,
+      direccion: direccionCalculo,
     });
 
     return {
@@ -78,10 +92,52 @@ export function ModalCarrito({
       calle,
       carrera,
     };
-  }, [tipoEntrega, direccion]);
+  }, [
+    analisisDireccion.calle,
+    analisisDireccion.carrera,
+    analisisDireccion.direccionInterpretada,
+    direccion,
+    tipoEntrega,
+  ]);
+
+  const direccionFinal =
+    analisisDireccion.direccionInterpretada.trim().length > 0
+      ? analisisDireccion.direccionInterpretada
+      : direccion.trim();
 
   const esDomicilioFallback =
     tipoEntrega === "domicilio" && resultadoDomicilio.requiereConfirmacion;
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") {
+      return;
+    }
+
+    if (tipoEntrega !== "domicilio" || direccion.trim().length === 0) {
+      return;
+    }
+
+    console.debug("[Domicilio][Debug]", {
+      direccionRecibida: direccion,
+      textoNormalizado: analisisDireccion.textoNormalizado,
+      direccionInterpretada: analisisDireccion.direccionInterpretada,
+      calleExtraida: analisisDireccion.calle,
+      carreraExtraida: analisisDireccion.carrera,
+      zonaDetectada: resultadoDomicilio.zona,
+      valorDomicilio: resultadoDomicilio.valor,
+      motivo: resultadoDomicilio.mensaje,
+    });
+  }, [
+    analisisDireccion.calle,
+    analisisDireccion.carrera,
+    analisisDireccion.direccionInterpretada,
+    analisisDireccion.textoNormalizado,
+    direccion,
+    resultadoDomicilio.mensaje,
+    resultadoDomicilio.valor,
+    resultadoDomicilio.zona,
+    tipoEntrega,
+  ]);
 
   const valorDomicilio = esDomicilioFallback ? 0 : resultadoDomicilio.valor;
   const totalFinal = subtotalProductos + valorDomicilio;
@@ -96,7 +152,7 @@ export function ModalCarrito({
   const nombreValido = nombre.trim().length > 0;
   const telefonoValido = telefono.replace(/\D/g, "").length >= 10;
   const direccionValida =
-    tipoEntrega === "recoger" || direccion.trim().length > 0;
+    tipoEntrega === "recoger" || direccionFinal.length > 0;
 
   const domicilioValido =
     tipoEntrega === "recoger" || resultadoDomicilio.estado === "OK";
@@ -109,6 +165,9 @@ export function ModalCarrito({
     (montoTransferencia.trim().length > 0 && montoEfectivo.trim().length > 0);
 
   const formularioCompleto = formularioValido && metodoMixtoValido;
+  const envioBloqueadoPorHorario =
+    !estadoNegocio.estaAbierto ||
+    (tipoEntrega === "domicilio" && !estadoNegocio.puedeRecibirDomicilios);
 
   const limpiarCheckout = () => {
     setNombre("");
@@ -124,6 +183,10 @@ export function ModalCarrito({
   };
 
   const generarMensaje = () => {
+    if (envioBloqueadoPorHorario) {
+      return;
+    }
+
     const telefonoLimpio = telefono.replace(/\D/g, "");
 
     const tipoEntregaLabel =
@@ -138,6 +201,10 @@ export function ModalCarrito({
 
     const esDomicilioFallback =
       tipoEntrega === "domicilio" && resultadoDomicilio.requiereConfirmacion;
+    const notaOperativa = obtenerNotaWhatsAppSegunEstado(
+      estadoNegocio,
+      tipoEntrega,
+    );
 
     let mensaje = "";
 
@@ -161,12 +228,16 @@ export function ModalCarrito({
     mensaje += "📍 *ENTREGA*\n";
     mensaje += `Tipo: ${tipoEntregaLabel}\n`;
 
-    if (tipoEntrega === "domicilio") {
-      mensaje += `Dirección: ${direccion.trim()}\n`;
+    if (notaOperativa) {
+      mensaje += `Estado operativo: ${notaOperativa}\n`;
+    }
 
-      if (direccion.trim().length > 0) {
+    if (tipoEntrega === "domicilio") {
+      mensaje += `Dirección: ${direccionFinal}\n`;
+
+      if (direccionFinal.length > 0) {
         const enlaceMaps = construirEnlaceGoogleMaps({
-          direccion: direccion.trim(),
+          direccion: direccionFinal,
         });
         if (enlaceMaps) {
           mensaje += `🗺️ Ubicación: ${enlaceMaps}\n`;
@@ -282,6 +353,23 @@ export function ModalCarrito({
                   <X size={16} aria-hidden="true" />
                 </button>
               </div>
+            </div>
+
+            <div
+              className={`${styles.estadoBanner} ${
+                envioBloqueadoPorHorario
+                  ? styles.estadoBannerBloqueado
+                  : styles.estadoBannerActivo
+              }`}
+            >
+              {estadoNegocio.mensaje}
+            </div>
+
+            <div className={styles.horariosCardWrap}>
+              <PanelHorarios
+                resumenHorarios={resumenHorarios}
+                label="⏰ Horarios de atención"
+              />
             </div>
 
             <div className={styles.contenedorScrolleable}>
@@ -419,12 +507,12 @@ export function ModalCarrito({
                           📍 Dirección de entrega
                         </label>
 
-                        <input
+                        <InputDireccionAutocomplete
                           id="direccion"
-                          className={styles.input}
                           value={direccion}
-                          onChange={(event) => setDireccion(event.target.value)}
-                          placeholder="Ej: Calle 80 # 36-20, Apto 502"
+                          onChangeDireccion={setDireccion}
+                          onSeleccionarDireccion={setDireccion}
+                          placeholder="Ej: cr 36a 105-58 o Calle 81 # 76-25"
                         />
 
                         {!direccionValida && (
@@ -440,8 +528,16 @@ export function ModalCarrito({
                             marginTop: "4px",
                           }}
                         >
-                          Ej: Calle 80 # 36-20, Calle 81 # 76-25
+                          Ej: cr 36a 105-58, crr 36a/105-58, calle 81 76-25
                         </p>
+
+                        {analisisDireccion.requiereConfirmacion &&
+                          direccion.trim().length > 0 && (
+                            <p className={styles.error}>
+                              No pudimos interpretar completamente la dirección.
+                              Revísala o selecciónala mejor.
+                            </p>
+                          )}
 
                         {resultadoDomicilio.estado === "OK" && (
                           <>
@@ -632,7 +728,7 @@ export function ModalCarrito({
                   <button
                     className={styles.boton}
                     onClick={generarMensaje}
-                    disabled={!formularioCompleto}
+                    disabled={!formularioCompleto || envioBloqueadoPorHorario}
                     type="button"
                   >
                     Pedir ahora 🛵
