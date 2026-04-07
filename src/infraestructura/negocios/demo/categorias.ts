@@ -12,7 +12,7 @@ export const categoriasDemo: Categoria[] = [
     orden: 2,
   },
   {
-    id: "patacon",
+    id: "patacones",
     nombre: "Patacones",
     orden: 3,
   },

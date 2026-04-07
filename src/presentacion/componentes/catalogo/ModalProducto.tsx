@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Minus, Plus, X } from "lucide-react";
 import type { Producto } from "@/types/producto";
 import type { ConfiguracionProducto } from "@/types/configuracion-producto";
@@ -39,6 +39,21 @@ export function ModalProducto({
   const agregarItem = useCarritoStore((state) => state.agregarItem);
   const actualizarItem = useCarritoStore((state) => state.actualizarItem);
   const [imagenAmpliada, setImagenAmpliada] = useState(false);
+
+  useEffect(() => {
+    if (!abierto) return;
+
+    const overflowOriginal = document.body.style.overflow;
+    const touchActionOriginal = document.body.style.touchAction;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = overflowOriginal;
+      document.body.style.touchAction = touchActionOriginal;
+    };
+  }, [abierto]);
 
   if (!abierto || !producto || !configuracion) {
     return null;
@@ -106,6 +121,10 @@ export function ModalProducto({
     cerrarModal();
   };
 
+  const accionPrincipalLabel = itemIdEditar
+    ? "Actualizar pedido"
+    : "Agregar al pedido";
+
   return (
     <div
       role="dialog"
@@ -116,9 +135,11 @@ export function ModalProducto({
         inset: 0,
         zIndex: 1000,
         background: "rgba(0, 0, 0, 0.45)",
+        backdropFilter: "blur(1.5px)",
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
+        padding: "8px",
       }}
       onClick={cerrarModal}
     >
@@ -129,6 +150,8 @@ export function ModalProducto({
           maxWidth: "520px",
           maxHeight: "88vh",
           overflowY: "auto",
+          overscrollBehaviorY: "contain",
+          WebkitOverflowScrolling: "touch",
           background: "var(--color-fondo, #ffffff)",
           borderTopLeftRadius: "24px",
           borderTopRightRadius: "24px",
@@ -332,12 +355,21 @@ export function ModalProducto({
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
+                        gap: "10px",
+                        minWidth: 0,
                         fontWeight: 600,
                         transition: "all 0.2s ease",
                       }}
                     >
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span>{opcion.nombre}</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          minWidth: 0,
+                          flex: 1,
+                        }}
+                      >
+                        <span style={{ lineHeight: 1.3 }}>{opcion.nombre}</span>
                         {opcion.precio > 0 && grupo.id !== "salsas" && (
                           <span style={{ fontWeight: 700 }}>
                             +${opcion.precio.toLocaleString()}
@@ -350,10 +382,12 @@ export function ModalProducto({
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
+                          flexShrink: 0,
                         }}
                       >
                         <button
                           type="button"
+                          disabled={cantidad === 0}
                           onClick={() =>
                             onCambiarCantidadOpcion(grupo.id, opcion.id, -1)
                           }
@@ -363,7 +397,8 @@ export function ModalProducto({
                             borderRadius: "10px",
                             border: "1px solid var(--color-borde)",
                             background: "var(--color-fondo)",
-                            cursor: "pointer",
+                            cursor: cantidad === 0 ? "not-allowed" : "pointer",
+                            opacity: cantidad === 0 ? 0.5 : 1,
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -373,7 +408,13 @@ export function ModalProducto({
                           <Minus size={14} aria-hidden="true" />
                         </button>
 
-                        <span style={{ minWidth: "20px", textAlign: "center" }}>
+                        <span
+                          style={{
+                            minWidth: "20px",
+                            textAlign: "center",
+                            fontWeight: 700,
+                          }}
+                        >
                           {cantidad}
                         </span>
 
@@ -419,19 +460,24 @@ export function ModalProducto({
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
+                      gap: "10px",
                       cursor: "pointer",
                       fontWeight: 600,
                       transition: "all 0.2s ease",
                       minHeight: "44px",
+                      minWidth: 0,
                     }}
                   >
-                    <span>{opcion.nombre}</span>
+                    <span style={{ lineHeight: 1.3, textAlign: "left" }}>
+                      {opcion.nombre}
+                    </span>
 
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
                         gap: "8px",
+                        flexShrink: 0,
                       }}
                     >
                       {opcion.precio > 0 && grupo.id !== "salsas" && (
@@ -490,14 +536,18 @@ export function ModalProducto({
           >
             <button
               type="button"
+              disabled={configuracion.cantidad <= 1}
               onClick={onDisminuirCantidad}
+              aria-label="Disminuir cantidad del producto"
+              title="Disminuir cantidad del producto"
               style={{
                 width: "44px",
                 height: "44px",
                 borderRadius: "12px",
                 border: "1px solid var(--color-borde)",
                 background: "var(--color-fondo, #fff)",
-                cursor: "pointer",
+                cursor: configuracion.cantidad <= 1 ? "not-allowed" : "pointer",
+                opacity: configuracion.cantidad <= 1 ? 0.5 : 1,
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -520,6 +570,8 @@ export function ModalProducto({
             <button
               type="button"
               onClick={onAumentarCantidad}
+              aria-label="Aumentar cantidad del producto"
+              title="Aumentar cantidad del producto"
               style={{
                 width: "44px",
                 height: "44px",
@@ -562,7 +614,7 @@ export function ModalProducto({
               boxShadow: "var(--sombra-suave)",
             }}
           >
-            Agregar al pedido - ${total.toLocaleString()}
+            {accionPrincipalLabel} - ${total.toLocaleString()}
           </button>
         </div>
       </div>

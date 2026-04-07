@@ -184,9 +184,15 @@ export function PaginaNegocioClient({
     setCategoriasAnimadas(true);
   };
 
-  const productosFiltrados = productos.filter(
-    (producto) => producto.categoriaId === categoriaActiva,
-  );
+  const productosFiltrados = productos
+    .filter((producto) => producto.categoriaId === categoriaActiva)
+    .sort((a, b) => {
+      if (a.precio !== b.precio) {
+        return a.precio - b.precio;
+      }
+
+      return a.nombre.localeCompare(b.nombre, "es");
+    });
 
   const abrirConfiguracionProducto = (producto: Producto) => {
     const configuracionInicial = inicializarConfiguracionProducto(producto);

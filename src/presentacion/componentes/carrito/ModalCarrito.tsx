@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Store, Trash2, Truck, X } from "lucide-react";
 import { useCarritoStore } from "@/store/carrito.store";
 import type { ItemCarrito } from "@/types/carrito";
@@ -53,6 +53,8 @@ export function ModalCarrito({
   const [montoTransferencia, setMontoTransferencia] = useState("");
   const [montoEfectivo, setMontoEfectivo] = useState("");
   const [checkoutVisible, setCheckoutVisible] = useState(false);
+  const contenedorScrolleableRef = useRef<HTMLDivElement | null>(null);
+  const formularioCheckoutRef = useRef<HTMLDivElement | null>(null);
 
   const subtotalProductos = items.reduce((acc, item) => acc + item.total, 0);
   const analisisDireccion = useMemo(
@@ -107,6 +109,38 @@ export function ModalCarrito({
 
   const esDomicilioFallback =
     tipoEntrega === "domicilio" && resultadoDomicilio.requiereConfirmacion;
+
+  useEffect(() => {
+    if (!abierto) return;
+
+    const overflowOriginal = document.body.style.overflow;
+    const touchActionOriginal = document.body.style.touchAction;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = overflowOriginal;
+      document.body.style.touchAction = touchActionOriginal;
+    };
+  }, [abierto]);
+
+  useEffect(() => {
+    if (!checkoutVisible) {
+      return;
+    }
+
+    const contenedor = contenedorScrolleableRef.current;
+    const formulario = formularioCheckoutRef.current;
+
+    if (contenedor) {
+      contenedor.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    requestAnimationFrame(() => {
+      formulario?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [checkoutVisible, tipoEntrega]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") {
@@ -372,7 +406,10 @@ export function ModalCarrito({
               />
             </div>
 
-            <div className={styles.contenedorScrolleable}>
+            <div
+              className={styles.contenedorScrolleable}
+              ref={contenedorScrolleableRef}
+            >
               <div className={styles.lista}>
                 {items.length === 0 ? (
                   <p className={styles.vacio}>Tu carrito esta vacio</p>
@@ -440,7 +477,16 @@ export function ModalCarrito({
               </div>
 
               {items.length > 0 && checkoutVisible && (
-                <div className={styles.formulario}>
+                <div className={styles.formulario} ref={formularioCheckoutRef}>
+                  <div className={styles.checkoutHead}>
+                    <p className={styles.checkoutEyebrow}>Datos de entrega</p>
+                    <h3 className={styles.checkoutTitle}>
+                      {tipoEntrega === "domicilio"
+                        ? "Completa tu domicilio"
+                        : "Completa para recoger en tienda"}
+                    </h3>
+                  </div>
+
                   <div className={styles.toggleGroup}>
                     <button
                       type="button"

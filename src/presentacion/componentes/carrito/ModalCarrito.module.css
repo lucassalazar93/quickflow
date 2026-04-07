@@ -126,7 +126,31 @@
   border-radius: 12px;
   border: 1px solid #eceff2;
   background: #fafbfc;
-  margin-top: 2px;
+  margin-top: 8px;
+  scroll-margin-top: 12px;
+}
+
+.checkoutHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.checkoutEyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.checkoutTitle {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+  color: #111827;
 }
 
 .toggleGroup {
@@ -603,6 +627,15 @@
   .contenedorScrolleable {
     padding: 10px 12px;
   }
+
+  .formulario {
+    gap: 10px;
+    border-radius: 14px;
+  }
+
+  .checkoutTitle {
+    font-size: 15px;
+  }
 }
 
 .vacio {
@@ -618,6 +651,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 8px;

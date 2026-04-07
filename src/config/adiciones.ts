@@ -109,6 +109,12 @@ export const GRUPOS_ADICIONES: Record<string, GrupoAdiciones> = {
         precio: 2000,
         permiteCantidad: true,
       },
+      {
+        id: "papas-fritas",
+        nombre: "Papas fritas",
+        precio: 2000,
+        permiteCantidad: true,
+      },
     ],
   },
 };
