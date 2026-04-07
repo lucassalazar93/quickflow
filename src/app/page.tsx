@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { HeroInicio } from "@/presentacion/componentes/inicio/HeroInicio";
 import { FooterQuickFlow } from "@/presentacion/componentes/inicio/FooterQuickFlow";
 import { negocioDemo } from "@/infraestructura/negocios/demo/negocio";
+import { debeBloquearAcceso } from "@/dominio/seguridad/evaluarBloqueoServer";
 
 export const metadata: Metadata = {
   title: "Mandingas La 37",
@@ -24,7 +26,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const bloqueada = await debeBloquearAcceso();
+
+  if (bloqueada) {
+    redirect("/bloqueado");
+  }
+
   return (
     <>
       <HeroInicio negocio={negocioDemo} />
