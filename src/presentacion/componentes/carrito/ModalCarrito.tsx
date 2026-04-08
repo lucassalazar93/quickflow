@@ -45,7 +45,8 @@ export function ModalCarrito({
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
-  const [observaciones, setObservaciones] = useState("");
+  const [indicacionesEntrega, setIndicacionesEntrega] = useState("");
+  const [comentarioPedido, setComentarioPedido] = useState("");
 
   const [metodoPago, setMetodoPago] = useState<
     "efectivo" | "transferencia" | "mixto"
@@ -207,7 +208,8 @@ export function ModalCarrito({
     setNombre("");
     setTelefono("");
     setDireccion("");
-    setObservaciones("");
+    setIndicacionesEntrega("");
+    setComentarioPedido("");
     setMetodoPago("efectivo");
     setMontoTransferencia("");
     setMontoEfectivo("");
@@ -232,6 +234,8 @@ export function ModalCarrito({
         : metodoPago === "transferencia"
           ? "Transferencia"
           : "Mixto";
+    const indicacionesEntregaLimpias = indicacionesEntrega.trim();
+    const comentarioPedidoLimpio = comentarioPedido.trim();
 
     const esDomicilioFallback =
       tipoEntrega === "domicilio" && resultadoDomicilio.requiereConfirmacion;
@@ -281,10 +285,24 @@ export function ModalCarrito({
       if (resultadoDomicilio.estado === "OK") {
         mensaje += `Zona: ${resultadoDomicilio.zona}\n`;
       }
+    }
 
-      if (observaciones.trim().length > 0) {
-        mensaje += `Indicaciones: ${observaciones.trim()}\n`;
-      }
+    mensaje += "\n";
+    mensaje += "🚨 *LEER ANTES DE PREPARAR Y DESPACHAR*\n";
+    mensaje += "─".repeat(40) + "\n";
+
+    if (tipoEntrega === "domicilio") {
+      mensaje += indicacionesEntregaLimpias
+        ? `📌 *INDICACIONES DE ENTREGA:* ${indicacionesEntregaLimpias}\n`
+        : "📌 *INDICACIONES DE ENTREGA:* Sin indicaciones\n";
+    }
+
+    mensaje += comentarioPedidoLimpio
+      ? `🍳 *COMENTARIO DEL PEDIDO:* ${comentarioPedidoLimpio}\n`
+      : "🍳 *COMENTARIO DEL PEDIDO:* Sin comentarios\n";
+
+    if (tipoEntrega === "recoger") {
+      mensaje += "🏪 *ENTREGA:* Recoger en tienda\n";
     }
 
     mensaje += "\n";
@@ -620,22 +638,41 @@ export function ModalCarrito({
                       </div>
 
                       <div className={styles.campo}>
-                        <label className={styles.label} htmlFor="observaciones">
-                          💬 Indicaciones especiales (opcional)
+                        <label
+                          className={styles.label}
+                          htmlFor="indicacionesEntrega"
+                        >
+                          📌 Indicaciones de entrega (opcional)
                         </label>
                         <textarea
-                          id="observaciones"
+                          id="indicacionesEntrega"
                           className={styles.textarea}
-                          value={observaciones}
+                          value={indicacionesEntrega}
                           onChange={(event) =>
-                            setObservaciones(event.target.value)
+                            setIndicacionesEntrega(event.target.value)
                           }
-                          placeholder="Ej: Casa blanca, portón negro, o cualquier indicación que nos ayude a encontrarte"
+                          placeholder="Ej: Casa blanca, portón negro, timbrar en el 2do piso"
                           rows={3}
                         />
                       </div>
                     </>
                   )}
+
+                  <div className={styles.campo}>
+                    <label className={styles.label} htmlFor="comentarioPedido">
+                      🍳 Comentario del pedido (opcional)
+                    </label>
+                    <textarea
+                      id="comentarioPedido"
+                      className={styles.textarea}
+                      value={comentarioPedido}
+                      onChange={(event) =>
+                        setComentarioPedido(event.target.value)
+                      }
+                      placeholder="Ej: mucha salsa, salsa aparte, sin cebolla"
+                      rows={3}
+                    />
+                  </div>
 
                   <div className={styles.campo}>
                     <label className={styles.label} htmlFor="metodoPago">

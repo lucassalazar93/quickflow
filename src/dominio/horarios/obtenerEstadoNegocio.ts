@@ -18,6 +18,68 @@ export type ResumenHorariosVisible = {
   domicilios: string;
 };
 
+function normalizarEstadoForzado(
+  valor: string | undefined,
+): EstadoNegocio | null {
+  const limpio = (valor ?? "").trim().toLowerCase();
+
+  if (!limpio) {
+    return null;
+  }
+
+  if (limpio === "abierto") return "abierto";
+  if (limpio === "cerrado") return "cerrado";
+  if (limpio === "domicilios_no_disponibles")
+    return "domicilios_no_disponibles";
+  if (limpio === "domicilios_cerrados") return "domicilios_cerrados";
+
+  return null;
+}
+
+function obtenerEstadoForzadoDesdeEnv(): ResultadoEstadoNegocio | null {
+  const estadoForzado =
+    normalizarEstadoForzado(process.env.APP_ESTADO_NEGOCIO_FORZADO) ??
+    normalizarEstadoForzado(process.env.NEXT_PUBLIC_ESTADO_NEGOCIO_FORZADO);
+
+  if (!estadoForzado) {
+    return null;
+  }
+
+  if (estadoForzado === "abierto") {
+    return {
+      estado: "abierto",
+      estaAbierto: true,
+      puedeRecibirDomicilios: true,
+      mensaje: "Modo prueba: negocio abierto 🟢",
+    };
+  }
+
+  if (estadoForzado === "cerrado") {
+    return {
+      estado: "cerrado",
+      estaAbierto: false,
+      puedeRecibirDomicilios: false,
+      mensaje: "Modo prueba: negocio cerrado 🔒",
+    };
+  }
+
+  if (estadoForzado === "domicilios_no_disponibles") {
+    return {
+      estado: "domicilios_no_disponibles",
+      estaAbierto: true,
+      puedeRecibirDomicilios: false,
+      mensaje: "Modo prueba: abierto, domicilios aún no disponibles ⏳",
+    };
+  }
+
+  return {
+    estado: "domicilios_cerrados",
+    estaAbierto: true,
+    puedeRecibirDomicilios: false,
+    mensaje: "Modo prueba: abierto, domicilios cerrados por hoy 🌙",
+  };
+}
+
 const DIAS = [
   "domingo",
   "lunes",
@@ -27,6 +89,73 @@ const DIAS = [
   "viernes",
   "sabado",
 ] as const;
+
+type DiaSemana = (typeof DIAS)[number];
+
+function obtenerTiempoLocal(
+  fecha: Date,
+  timeZone: string,
+): { dia: DiaSemana; minutos: number; indiceDia: number } {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    const partes = formatter.formatToParts(fecha);
+    const weekday = partes.find((parte) => parte.type === "weekday")?.value;
+    const hora = Number(partes.find((parte) => parte.type === "hour")?.value);
+    const minuto = Number(
+      partes.find((parte) => parte.type === "minute")?.value,
+    );
+
+    const weekdayToIndex: Record<string, number> = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
+
+    const indiceDia = weekday ? weekdayToIndex[weekday] : NaN;
+
+    if (
+      !Number.isFinite(indiceDia) ||
+      !Number.isFinite(hora) ||
+      !Number.isFinite(minuto)
+    ) {
+      throw new Error(
+        "No fue posible resolver la fecha local por zona horaria",
+      );
+    }
+
+    return {
+      dia: DIAS[indiceDia],
+      minutos: hora * 60 + minuto,
+      indiceDia,
+    };
+  } catch {
+    const indiceDia = fecha.getDay();
+    return {
+      dia: DIAS[indiceDia],
+      minutos: fecha.getHours() * 60 + fecha.getMinutes(),
+      indiceDia,
+    };
+  }
+}
+
+function estaEnRangoAbsoluto(
+  ahora: number,
+  inicio: number,
+  fin: number,
+): boolean {
+  return ahora >= inicio && ahora <= fin;
+}
 
 function parseHora(hora: string): number {
   const [h, m] = hora.split(":").map(Number);
@@ -40,23 +169,16 @@ function formatearHora12h(hora24: string): string {
   return `${hora12}:${String(minuto).padStart(2, "0")} ${periodo}`;
 }
 
-function obtenerDiaActual(date: Date) {
-  return DIAS[date.getDay()];
-}
-
-function estaEnRango(ahora: number, apertura: number, cierre: number): boolean {
-  // Manejo de madrugada (ej: 18:00 → 02:00)
-  if (cierre < apertura) {
-    return ahora >= apertura || ahora <= cierre;
-  }
-
-  return ahora >= apertura && ahora <= cierre;
-}
-
 export function obtenerEstadoNegocio(
   negocio: Negocio,
   fechaActual: Date = new Date(),
 ): ResultadoEstadoNegocio {
+  const estadoForzado = obtenerEstadoForzadoDesdeEnv();
+
+  if (estadoForzado) {
+    return estadoForzado;
+  }
+
   if (!negocio.horarios) {
     return {
       estado: negocio.abierto ? "abierto" : "cerrado",
@@ -66,18 +188,43 @@ export function obtenerEstadoNegocio(
     };
   }
 
-  // ⚠️ importante: hora en minutos
-  const horaActual = fechaActual.getHours() * 60 + fechaActual.getMinutes();
+  const {
+    dia,
+    minutos: horaActual,
+    indiceDia,
+  } = obtenerTiempoLocal(fechaActual, negocio.horarios.timezone);
 
-  const dia = obtenerDiaActual(fechaActual);
+  const diaAnterior = DIAS[(indiceDia + 6) % 7];
+  const horarioDia = negocio.horarios.atencion[dia];
+  const horarioDiaAnterior = negocio.horarios.atencion[diaAnterior];
 
-  const horarioDia =
-    negocio.horarios.atencion[dia as keyof typeof negocio.horarios.atencion];
+  const aperturaHoy = parseHora(horarioDia.apertura);
+  const cierreHoy = parseHora(horarioDia.cierre);
+  const hoyCruzaMedianoche = cierreHoy < aperturaHoy;
 
-  const apertura = parseHora(horarioDia.apertura);
-  const cierre = parseHora(horarioDia.cierre);
+  const aperturaAyer = parseHora(horarioDiaAnterior.apertura);
+  const cierreAyer = parseHora(horarioDiaAnterior.cierre);
+  const ayerCruzaMedianoche = cierreAyer < aperturaAyer;
 
-  const estaAbierto = estaEnRango(horaActual, apertura, cierre);
+  const ahoraAbsoluto = horaActual;
+
+  const rangoHoyInicio = aperturaHoy;
+  const rangoHoyFin = cierreHoy + (hoyCruzaMedianoche ? 1440 : 0);
+
+  const rangoAyerInicio = aperturaAyer - 1440;
+  const rangoAyerFin = cierreAyer;
+
+  const abiertoPorHorarioHoy = estaEnRangoAbsoluto(
+    ahoraAbsoluto,
+    rangoHoyInicio,
+    rangoHoyFin,
+  );
+
+  const abiertoPorHorarioAyer =
+    ayerCruzaMedianoche &&
+    estaEnRangoAbsoluto(ahoraAbsoluto, rangoAyerInicio, rangoAyerFin);
+
+  const estaAbierto = abiertoPorHorarioHoy || abiertoPorHorarioAyer;
 
   if (!estaAbierto) {
     return {
@@ -88,14 +235,27 @@ export function obtenerEstadoNegocio(
     };
   }
 
+  const usaTurnoAyer = abiertoPorHorarioAyer;
+
+  const aperturaTurno = usaTurnoAyer ? aperturaAyer : aperturaHoy;
+  const cierreTurnoBase = usaTurnoAyer ? cierreAyer : cierreHoy;
+  const turnoCruzaMedianoche = usaTurnoAyer
+    ? ayerCruzaMedianoche
+    : hoyCruzaMedianoche;
+
+  const ahoraEnTurno = usaTurnoAyer ? horaActual + 1440 : horaActual;
+  const cierreTurno = cierreTurnoBase + (turnoCruzaMedianoche ? 1440 : 0);
+
   //  lógica de domicilios
   const inicioDomicilios = parseHora(negocio.horarios.domicilios.inicio);
-
+  const inicioDomiciliosTurno =
+    inicioDomicilios +
+    (turnoCruzaMedianoche && inicioDomicilios < aperturaTurno ? 1440 : 0);
   const corteDomicilios =
-    cierre - negocio.horarios.domicilios.corteAntesDeCierreMinutos;
+    cierreTurno - negocio.horarios.domicilios.corteAntesDeCierreMinutos;
 
   // Antes de que empiecen domicilios
-  if (horaActual < inicioDomicilios) {
+  if (ahoraEnTurno < inicioDomiciliosTurno) {
     return {
       estado: "domicilios_no_disponibles",
       estaAbierto: true,
@@ -106,7 +266,7 @@ export function obtenerEstadoNegocio(
   }
 
   // Después del corte
-  if (horaActual > corteDomicilios) {
+  if (ahoraEnTurno > corteDomicilios) {
     return {
       estado: "domicilios_cerrados",
       estaAbierto: true,
