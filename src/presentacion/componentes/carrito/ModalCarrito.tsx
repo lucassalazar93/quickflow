@@ -246,90 +246,72 @@ export function ModalCarrito({
 
     let mensaje = "";
 
-    // Encabezado profesional
-    mensaje += "🍟 *MANDINGAS LA 37* 🍟\n";
-    mensaje += "_Gracias por tu pedido_\n\n";
+    mensaje += "🍟 *MANDINGAS LA 37*\n";
+    mensaje += "🚀 Pedido recibido\n\n";
 
-    // Alerta si es necesario confirmación
-    if (esDomicilioFallback) {
-      mensaje += "⚠️ *NOTA IMPORTANTE*\n";
-      mensaje += resultadoDomicilio.mensaje + "\n";
-      mensaje += "_El valor será confirmado al procesar tu pedido._\n\n";
-    }
+    mensaje += `👤 ${nombre.trim()}\n`;
+    mensaje += `📞 ${telefonoLimpio}\n\n`;
 
-    // Información del cliente
-    mensaje += "👤 *CLIENTE*\n";
-    mensaje += `Nombre: ${nombre.trim()}\n`;
-    mensaje += `Teléfono: ${telefonoLimpio}\n\n`;
-
-    // Información de entrega
-    mensaje += "📍 *ENTREGA*\n";
-    mensaje += `Tipo: ${tipoEntregaLabel}\n`;
+    mensaje += `📍 ${tipoEntregaLabel}\n`;
 
     if (notaOperativa) {
-      mensaje += `Estado operativo: ${notaOperativa}\n`;
+      mensaje += `🕐 ${notaOperativa}\n`;
     }
 
     if (tipoEntrega === "domicilio") {
-      mensaje += `Dirección: ${direccionFinal}\n`;
+      mensaje += `📌 ${direccionFinal}\n`;
+
+      if (resultadoDomicilio.estado === "OK") {
+        mensaje += `${resultadoDomicilio.zona}\n`;
+      }
 
       if (direccionFinal.length > 0) {
         const enlaceMaps = construirEnlaceGoogleMaps({
           direccion: direccionFinal,
         });
         if (enlaceMaps) {
-          mensaje += `🗺️ Ubicación: ${enlaceMaps}\n`;
+          mensaje += `🗺️ ${enlaceMaps}\n`;
         }
-      }
-
-      if (resultadoDomicilio.estado === "OK") {
-        mensaje += `Zona: ${resultadoDomicilio.zona}\n`;
       }
     }
 
     mensaje += "\n";
-    mensaje += "🚨 *LEER ANTES DE PREPARAR Y DESPACHAR*\n";
-    mensaje += "─".repeat(40) + "\n";
 
     if (tipoEntrega === "domicilio") {
       mensaje += indicacionesEntregaLimpias
-        ? `📌 *INDICACIONES DE ENTREGA:* ${indicacionesEntregaLimpias}\n`
-        : "📌 *INDICACIONES DE ENTREGA:* Sin indicaciones\n";
+        ? `📝 ${indicacionesEntregaLimpias}\n`
+        : "📝 Sin indicaciones de entrega\n";
     }
 
     mensaje += comentarioPedidoLimpio
-      ? `🍳 *COMENTARIO DEL PEDIDO:* ${comentarioPedidoLimpio}\n`
-      : "🍳 *COMENTARIO DEL PEDIDO:* Sin comentarios\n";
+      ? `🍳 ${comentarioPedidoLimpio}\n`
+      : "🍳 Sin comentarios\n";
 
-    if (tipoEntrega === "recoger") {
-      mensaje += "🏪 *ENTREGA:* Recoger en tienda\n";
+    if (esDomicilioFallback) {
+      mensaje += `⚠️ ${resultadoDomicilio.mensaje}\n`;
+      mensaje += "⚠️ El valor final de domicilio se confirma con la tienda\n";
     }
 
     mensaje += "\n";
-
-    // Productos
-    mensaje += "🧺 *PRODUCTOS*\n";
-    mensaje += "─".repeat(40) + "\n";
+    mensaje += "🧺 *Pedido:*\n";
 
     items.forEach((item) => {
-      mensaje += `${item.cantidad}x ${item.nombre}\n`;
+      mensaje += `• ${item.nombre} x${item.cantidad}\n`;
 
       if (item.salsas.length > 0) {
         const salsas = item.salsas.map((id) => salsasPorId.get(id) ?? id);
-        mensaje += `   └─ Salsas: ${salsas.join(", ")}\n`;
+        mensaje += `  + Salsas: ${salsas.join(", ")}\n`;
       }
 
       item.adiciones.forEach((adicion) => {
-        mensaje += `   └─ +${adicion.nombre} (x${adicion.cantidad})\n`;
+        mensaje += `  + ${adicion.nombre} x${adicion.cantidad}\n`;
       });
 
-      mensaje += `   💲 ${item.total.toLocaleString()}\n\n`;
+      mensaje += `  + Valor: $${item.total.toLocaleString()}\n`;
     });
 
-    // Datos de pago
-    mensaje += "💳 *PAGO*\n";
-    mensaje += "─".repeat(40) + "\n";
-    mensaje += `Método: ${metodoPagoLabel}\n`;
+    mensaje += "\n";
+    mensaje += `💳 ${metodoPagoLabel}\n`;
 
     if (metodoPago === "mixto") {
       mensaje += `Transferencia: $${montoTransferencia.trim()}\n`;
@@ -337,26 +319,15 @@ export function ModalCarrito({
     }
 
     mensaje += "\n";
-
-    // Resumen total
-    mensaje += "═".repeat(40) + "\n";
-    mensaje += `🧺 Subtotal: $${subtotalProductos.toLocaleString()}\n`;
+    mensaje += `💰 Total: *$${totalFinal.toLocaleString()}*\n`;
 
     if (tipoEntrega === "domicilio") {
-      if (esDomicilioFallback) {
-        mensaje += "🛵 Domicilio: Por confirmar\n";
-      } else {
-        mensaje += `🛵 Domicilio: $${valorDomicilio.toLocaleString()}\n`;
-      }
+      mensaje += esDomicilioFallback
+        ? "(domicilio por confirmar)\n"
+        : "(incluye domicilio)\n";
     }
 
-    mensaje += `\n💰 *TOTAL: $${totalFinal.toLocaleString()}*\n`;
-    mensaje += "═".repeat(40) + "\n\n";
-
-    // Mensaje final personalizado
-    mensaje += "Gracias por confiar en nosotros. 🙏\n";
-    mensaje += "Tu pedido será confirmado en los próximos minutos.\n";
-    mensaje += "¡Recibirás actualizaciones por este chat! 📲";
+    mensaje += "\n🕐 Te confirmamos en breve 🙌";
 
     const url = `https://wa.me/573150399322?text=${encodeURIComponent(
       mensaje,
