@@ -8,15 +8,15 @@ export const negocioDemo: Negocio = {
   subtitulo: "Pide fácil por WhatsApp y recibe tu comida rápido.",
   colorPrimario: "#E1251B",
   colorSecundario: "#FFD54A",
-  abierto: true, // ⚠️ temporal, luego se reemplaza por lógica de horarios
+  abierto: true, //  temporal, luego se reemplaza por lógica de horarios
   whatsapp: "573001234567",
 
-  // 📍 Ubicación física del negocio
+  //  Ubicación física del negocio
   direccion: "Carrera 37 # 79-55, Medellín, Colombia",
   latitud: 6.2732,
   longitud: -75.5516,
 
-  // 🕒 Configuración horaria real
+  //  Configuración horaria real
   horarios: {
     timezone: "America/Bogota",
 

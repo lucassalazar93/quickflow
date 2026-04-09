@@ -62,6 +62,21 @@ describe("integración parseDireccion + calcularDomicilio", () => {
     expect(resultado.valor).toBe(3000);
   });
 
+  it("interpreta dirección sin # ni guion (ej: calle 80 48a 85)", () => {
+    const entrada = "calle 80 48a 85";
+    const analisis = procesarDireccionUsuario(entrada);
+    const resultado = calcularDomicilio({
+      direccion: analisis.direccionInterpretada,
+    });
+
+    expect(analisis.direccionInterpretada).toBe("calle 80 # 48a-85");
+    expect(analisis.calle).toBe(80);
+    expect(analisis.carrera).toBe(48);
+    expect(analisis.esValidaParaCalculo).toBe(true);
+    expect(analisis.requiereConfirmacion).toBe(false);
+    expect(resultado.mensaje).not.toContain("No pudimos interpretar");
+  });
+
   it("usa coordenadas solo cuando se habilita explícitamente como fallback", () => {
     const resultado = calcularDomicilio({
       latitud: 6.2732,
@@ -71,6 +86,21 @@ describe("integración parseDireccion + calcularDomicilio", () => {
 
     expect(resultado.zona).toBe("Zona 1");
     expect(resultado.valor).toBe(3000);
+    expect(resultado.requiereConfirmacion).toBe(false);
+  });
+
+  it("cobra Zona 5 para carrera 48a 80-34 por regla de zona", () => {
+    const entrada = "carrera 48a 80-34";
+    const analisis = procesarDireccionUsuario(entrada);
+    const resultado = calcularDomicilio({
+      direccion: analisis.direccionInterpretada,
+    });
+
+    expect(analisis.direccionInterpretada).toBe("carrera 48a # 80-34");
+    expect(analisis.calle).toBe(80);
+    expect(analisis.carrera).toBe(48);
+    expect(resultado.zona).toBe("Zona 5");
+    expect(resultado.valor).toBe(7000);
     expect(resultado.requiereConfirmacion).toBe(false);
   });
 });

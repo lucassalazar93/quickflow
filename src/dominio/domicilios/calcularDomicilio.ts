@@ -1,4 +1,8 @@
-import { LIMITES_COBERTURA, REGLAS_DOMICILIO } from "./reglasDomicilio";
+import {
+  EXCEPCIONES_DOMICILIO,
+  LIMITES_COBERTURA,
+  REGLAS_DOMICILIO,
+} from "./reglasDomicilio";
 import { procesarDireccionUsuario } from "./parseDireccion";
 
 export type ResultadoDomicilio = {
@@ -104,6 +108,23 @@ function calcularDomicilioPorTexto(
       requiereConfirmacion: true,
       mensaje:
         "La dirección está fuera de la cobertura habitual. El pedido requiere confirmación por parte de la tienda.",
+    };
+  }
+
+  const calleN = Math.round(calle);
+  const carreraN = Math.round(carrera);
+
+  const excepcion = EXCEPCIONES_DOMICILIO.find(
+    (item) => item.calle === calleN && item.carrera === carreraN,
+  );
+
+  if (excepcion) {
+    return {
+      estado: "OK",
+      zona: excepcion.zona,
+      valor: excepcion.valor,
+      requiereConfirmacion: false,
+      mensaje: excepcion.motivo ?? "Domicilio confirmado según excepción.",
     };
   }
 

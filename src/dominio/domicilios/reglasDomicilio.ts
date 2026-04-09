@@ -138,6 +138,16 @@ function distanciaEnBloques(calle: number, carrera: number): number {
 }
 
 function tarifaPorDistancia(calle: number, carrera: number) {
+  // Regla estructural: franja alta de carrera (46-50) se cobra como Zona 5.
+  // Esto evita depender de excepciones puntuales para esa zona.
+  if (Math.round(carrera) >= 46) {
+    return {
+      distancia: distanciaEnBloques(calle, carrera),
+      zona: "Zona 5",
+      valor: 7000,
+    };
+  }
+
   const dist = distanciaEnBloques(calle, carrera);
 
   const tarifa =

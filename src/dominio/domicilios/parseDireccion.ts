@@ -3,6 +3,8 @@ export type AnalisisDireccion = {
   textoLimpio: string;
   textoNormalizado: string;
   direccionInterpretada: string;
+  puntajeConfianza: number;
+  nivelConfianza: "alta" | "media" | "baja";
   tipoVia: "carrera" | "calle" | null;
   sugerencias: string[];
   requiereConfirmacion: boolean;
@@ -24,6 +26,8 @@ function limpiarTexto(texto: string): string {
 
 function unificarAbreviaciones(texto: string): string {
   return texto
+    .replace(/\b(cr|cra|crr|kr|kra|krr|carrera)(?=\d)/g, "carrera ")
+    .replace(/\b(cl|cll|calle)(?=\d)/g, "calle ")
     .replace(/\b(cr|cra|crr|kr|kra|krr|carrera)\b/g, "carrera")
     .replace(/\b(cl|cll|calle)\b/g, "calle");
 }
@@ -31,6 +35,8 @@ function unificarAbreviaciones(texto: string): string {
 function normalizarSeparadores(texto: string): string {
   return texto
     .replace(/\//g, " # ")
+    .replace(/(\d{1,3}[a-z]?)\s+(nro|numero|num|no)\s+/g, "$1 # ")
+    .replace(/(\d{1,3})\s+([a-z])\b/g, "$1$2")
     .replace(/\s*#\s*/g, " # ")
     .replace(/\s*-\s*/g, "-")
     .replace(/\s+/g, " ")
@@ -62,8 +68,17 @@ function construirDireccionNormalizada(
   return `${tipoVia} ${viaPrincipal} # ${viaSecundaria}-${placa}`;
 }
 
+function calcularNivelConfianza(
+  puntajeConfianza: number,
+): "alta" | "media" | "baja" {
+  if (puntajeConfianza >= 85) return "alta";
+  if (puntajeConfianza >= 60) return "media";
+  return "baja";
+}
+
 function interpretarDireccion(textoNormalizado: string): {
   direccionInterpretada: string;
+  puntajeConfianza: number;
   tipoVia: "carrera" | "calle" | null;
   calle: number | null;
   carrera: number | null;
@@ -73,6 +88,7 @@ function interpretarDireccion(textoNormalizado: string): {
   if (!textoNormalizado) {
     return {
       direccionInterpretada: "",
+      puntajeConfianza: 0,
       tipoVia: null,
       calle: null,
       carrera: null,
@@ -100,6 +116,7 @@ function interpretarDireccion(textoNormalizado: string): {
 
     return {
       direccionInterpretada,
+      puntajeConfianza: 98,
       tipoVia,
       calle:
         tipoVia === "calle"
@@ -133,6 +150,109 @@ function interpretarDireccion(textoNormalizado: string): {
 
     return {
       direccionInterpretada,
+      puntajeConfianza: 96,
+      tipoVia,
+      calle:
+        tipoVia === "calle"
+          ? extraerNumeroBase(viaPrincipal)
+          : extraerNumeroBase(viaSecundaria),
+      carrera:
+        tipoVia === "carrera"
+          ? extraerNumeroBase(viaPrincipal)
+          : extraerNumeroBase(viaSecundaria),
+      requiereConfirmacion: false,
+      motivoConfirmacion: "",
+    };
+  }
+
+  const patronConNumeralSinGuion = textoNormalizado.match(
+    /\b(carrera|calle)\s+(\d{1,3}[a-z]?)\s+#\s+(\d{1,3}[a-z]?)\s+(\d{1,3}[a-z]?)\b/,
+  );
+
+  if (patronConNumeralSinGuion) {
+    const tipoVia = patronConNumeralSinGuion[1] as "carrera" | "calle";
+    const viaPrincipal = patronConNumeralSinGuion[2];
+    const viaSecundaria = patronConNumeralSinGuion[3];
+    const placa = patronConNumeralSinGuion[4];
+
+    const direccionInterpretada = construirDireccionNormalizada(
+      tipoVia,
+      viaPrincipal,
+      viaSecundaria,
+      placa,
+    );
+
+    return {
+      direccionInterpretada,
+      puntajeConfianza: 92,
+      tipoVia,
+      calle:
+        tipoVia === "calle"
+          ? extraerNumeroBase(viaPrincipal)
+          : extraerNumeroBase(viaSecundaria),
+      carrera:
+        tipoVia === "carrera"
+          ? extraerNumeroBase(viaPrincipal)
+          : extraerNumeroBase(viaSecundaria),
+      requiereConfirmacion: false,
+      motivoConfirmacion: "",
+    };
+  }
+
+  const patronSinSeparadores = textoNormalizado.match(
+    /\b(carrera|calle)\s+(\d{1,3}[a-z]?)\s+(\d{1,3}[a-z]?)\s+(\d{1,3}[a-z]?)\b/,
+  );
+
+  if (patronSinSeparadores) {
+    const tipoVia = patronSinSeparadores[1] as "carrera" | "calle";
+    const viaPrincipal = patronSinSeparadores[2];
+    const viaSecundaria = patronSinSeparadores[3];
+    const placa = patronSinSeparadores[4];
+
+    const direccionInterpretada = construirDireccionNormalizada(
+      tipoVia,
+      viaPrincipal,
+      viaSecundaria,
+      placa,
+    );
+
+    return {
+      direccionInterpretada,
+      puntajeConfianza: 90,
+      tipoVia,
+      calle:
+        tipoVia === "calle"
+          ? extraerNumeroBase(viaPrincipal)
+          : extraerNumeroBase(viaSecundaria),
+      carrera:
+        tipoVia === "carrera"
+          ? extraerNumeroBase(viaPrincipal)
+          : extraerNumeroBase(viaSecundaria),
+      requiereConfirmacion: false,
+      motivoConfirmacion: "",
+    };
+  }
+
+  const patronPlacaCompacta = textoNormalizado.match(
+    /\b(carrera|calle)\s+(\d{1,3}[a-z]?)\s+#?\s*(\d{1,3}[a-z]?)(\d{1,3}[a-z]?)\b/,
+  );
+
+  if (patronPlacaCompacta) {
+    const tipoVia = patronPlacaCompacta[1] as "carrera" | "calle";
+    const viaPrincipal = patronPlacaCompacta[2];
+    const viaSecundaria = patronPlacaCompacta[3];
+    const placa = patronPlacaCompacta[4];
+
+    const direccionInterpretada = construirDireccionNormalizada(
+      tipoVia,
+      viaPrincipal,
+      viaSecundaria,
+      placa,
+    );
+
+    return {
+      direccionInterpretada,
+      puntajeConfianza: 88,
       tipoVia,
       calle:
         tipoVia === "calle"
@@ -156,6 +276,7 @@ function interpretarDireccion(textoNormalizado: string): {
 
     return {
       direccionInterpretada: textoNormalizado,
+      puntajeConfianza: 55,
       tipoVia,
       calle: null,
       carrera: null,
@@ -168,6 +289,7 @@ function interpretarDireccion(textoNormalizado: string): {
   if (/^\d{1,3}\s+\d{1,3}\s+\d{1,3}$/.test(textoNormalizado)) {
     return {
       direccionInterpretada: textoNormalizado,
+      puntajeConfianza: 35,
       tipoVia: null,
       calle: null,
       carrera: null,
@@ -179,6 +301,7 @@ function interpretarDireccion(textoNormalizado: string): {
 
   return {
     direccionInterpretada: textoNormalizado,
+    puntajeConfianza: 20,
     tipoVia: null,
     calle: null,
     carrera: null,
@@ -200,12 +323,17 @@ export function procesarDireccionUsuario(
   const sugerencias = interpretacion.direccionInterpretada
     ? [capitalizarDireccion(interpretacion.direccionInterpretada)]
     : [];
+  const nivelConfianza = calcularNivelConfianza(
+    interpretacion.puntajeConfianza,
+  );
 
   return {
     textoOriginal,
     textoLimpio,
     textoNormalizado,
     direccionInterpretada: interpretacion.direccionInterpretada,
+    puntajeConfianza: interpretacion.puntajeConfianza,
+    nivelConfianza,
     tipoVia: interpretacion.tipoVia,
     sugerencias,
     requiereConfirmacion: interpretacion.requiereConfirmacion,
