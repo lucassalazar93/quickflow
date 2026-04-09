@@ -132,7 +132,7 @@ export const productosDemo: Producto[] = [
   {
     id: "choripollo",
     nombre: "CHORIPOLLO",
-    descripcion: "Papas, chorizo de pollo",
+    descripcion: "Papas, chorizo de pollo, arepa",
     precio: 11000,
     imagen: "/productos/choripollo.webp",
     categoriaId: "mandingas",
@@ -163,7 +163,7 @@ export const productosDemo: Producto[] = [
     id: "hamburguesas",
     nombre: "HAMBURGUESAS",
     descripcion:
-      "Pan, carne, queso, tocineta, ensalada, cebolla caramelizada y ripio",
+      "Pan artesanal, carne, queso, tocineta, ensalada, cebolla caramelizada y ripio",
     precio: 15000,
     imagen: "/productos/hambuerguesa.webp",
     categoriaId: "rapidas",
@@ -172,7 +172,7 @@ export const productosDemo: Producto[] = [
   {
     id: "perrito",
     nombre: "PERRITO",
-    descripcion: "Pan, salchicha, queso, tocineta, ensalada,",
+    descripcion: "Pan, salchicha, queso, tocineta, ensalada",
     precio: 10000,
     imagen: "/productos/perro.webp",
     categoriaId: "rapidas",
@@ -183,7 +183,7 @@ export const productosDemo: Producto[] = [
   {
     id: "patacon",
     nombre: "PATACON",
-    descripcion: "Lechuga, queso, tocineta, pollo desmechado, ensalada",
+    descripcion: "queso, tocineta, pollo desmechado, ensalada",
     precio: 15000,
     imagen: "/productos/patacon.webp",
     categoriaId: "patacones",
@@ -192,7 +192,8 @@ export const productosDemo: Producto[] = [
   {
     id: "patacon-mixto",
     nombre: "PATACON MIXTO",
-    descripcion: "",
+    descripcion:
+      "queso, tocineta, pollo desmechado, carne desmechada, ensalada",
     precio: 18000,
     imagen: "/productos/pataconmixto.webp",
     categoriaId: "patacones",
@@ -212,7 +213,7 @@ export const productosDemo: Producto[] = [
   {
     id: "gaseosa-coca-cola-1-5",
     nombre: "GASEOSA COCA COLA 1.5",
-    descripcion: "",
+    descripcion: "Presentación 1.5L",
     precio: 8500,
     imagen: "/productos/gaseosa_coca_cola1.5.webp",
     categoriaId: "gaseosas",

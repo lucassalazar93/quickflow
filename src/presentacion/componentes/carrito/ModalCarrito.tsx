@@ -319,17 +319,23 @@ export function ModalCarrito({
     }
 
     mensaje += "\n";
-    mensaje += `💰 Total: *$${totalFinal.toLocaleString()}*\n`;
+    mensaje += `🧺 Productos: *$${subtotalProductos.toLocaleString()}*\n`;
 
     if (tipoEntrega === "domicilio") {
       mensaje += esDomicilioFallback
-        ? "(domicilio por confirmar)\n"
-        : "(incluye domicilio)\n";
+        ? "🛵 Domicilio: Por confirmar\n"
+        : `🛵 Domicilio: $${valorDomicilio.toLocaleString()}\n`;
     }
 
     mensaje += "\n🕐 Te confirmamos en breve 🙌";
 
-    const url = `https://wa.me/573150399322?text=${encodeURIComponent(
+    const whatsappDestino = negocio.whatsapp.replace(/\D/g, "");
+
+    if (!whatsappDestino) {
+      return;
+    }
+
+    const url = `https://wa.me/${whatsappDestino}?text=${encodeURIComponent(
       mensaje,
     )}`;
 
