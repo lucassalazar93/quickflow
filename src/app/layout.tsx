@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Montserrat } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const inter = Inter({
@@ -51,6 +52,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.variable} ${montserrat.variable}`}>
         {children}
+        <Analytics /> {/* 👈 Esto activa las visitas */}
       </body>
     </html>
   );

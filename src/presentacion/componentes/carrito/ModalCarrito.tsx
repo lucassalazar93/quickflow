@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import { Pencil, Store, Trash2, Truck, X } from "lucide-react";
 import { useCarritoStore } from "@/store/carrito.store";
 import type { ItemCarrito } from "@/types/carrito";
@@ -58,6 +59,7 @@ export function ModalCarrito({
   const formularioCheckoutRef = useRef<HTMLDivElement | null>(null);
 
   const subtotalProductos = items.reduce((acc, item) => acc + item.total, 0);
+
   const analisisDireccion = useMemo(
     () => procesarDireccionUsuario(direccion),
     [direccion],
@@ -75,6 +77,7 @@ export function ModalCarrito({
         carrera: null as number | null,
       };
     }
+
     const direccionCalculo =
       analisisDireccion.direccionInterpretada.trim().length > 0
         ? analisisDireccion.direccionInterpretada
@@ -82,6 +85,7 @@ export function ModalCarrito({
 
     const calle = analisisDireccion.calle;
     const carrera = analisisDireccion.carrera;
+
     const resultado = calcularDomicilio({
       direccion: direccionCalculo,
     });
@@ -200,6 +204,7 @@ export function ModalCarrito({
     (montoTransferencia.trim().length > 0 && montoEfectivo.trim().length > 0);
 
   const formularioCompleto = formularioValido && metodoMixtoValido;
+
   const envioBloqueadoPorHorario =
     !estadoNegocio.estaAbierto ||
     (tipoEntrega === "domicilio" && !estadoNegocio.puedeRecibirDomicilios);
@@ -234,11 +239,10 @@ export function ModalCarrito({
         : metodoPago === "transferencia"
           ? "Transferencia"
           : "Mixto";
+
     const indicacionesEntregaLimpias = indicacionesEntrega.trim();
     const comentarioPedidoLimpio = comentarioPedido.trim();
 
-    const esDomicilioFallback =
-      tipoEntrega === "domicilio" && resultadoDomicilio.requiereConfirmacion;
     const notaOperativa = obtenerNotaWhatsAppSegunEstado(
       estadoNegocio,
       tipoEntrega,
@@ -269,6 +273,7 @@ export function ModalCarrito({
         const enlaceMaps = construirEnlaceGoogleMaps({
           direccion: direccionFinal,
         });
+
         if (enlaceMaps) {
           mensaje += `🗺️ ${enlaceMaps}\n`;
         }
@@ -327,6 +332,7 @@ export function ModalCarrito({
         : `🛵 Domicilio: $${valorDomicilio.toLocaleString()}\n`;
     }
 
+    mensaje += `\n💰 Total: *$${totalFinal.toLocaleString()}*\n`;
     mensaje += "\n🕐 Te confirmamos en breve 🙌";
 
     const whatsappDestino = negocio.whatsapp.replace(/\D/g, "");
@@ -339,7 +345,18 @@ export function ModalCarrito({
       mensaje,
     )}`;
 
-    window.open(url, "_blank");
+    track("click_whatsapp", {
+      negocio: negocio.nombre?.trim() || "mandingas-la-37",
+      origen: "modal_carrito",
+      tipo_entrega: tipoEntrega,
+      metodo_pago: metodoPago,
+      total: totalFinal,
+      cantidad_items: items.length,
+      horario_abierto: estadoNegocio.estaAbierto ? "si" : "no",
+      domicilio_requiere_confirmacion: esDomicilioFallback ? "si" : "no",
+    });
+
+    window.open(url, "_blank", "noopener,noreferrer");
     limpiarCheckout();
     onClose();
   };
@@ -373,6 +390,7 @@ export function ModalCarrito({
                     <Pencil size={16} aria-hidden="true" />
                   </button>
                 )}
+
                 <button
                   onClick={handleClose}
                   className={styles.cerrar}

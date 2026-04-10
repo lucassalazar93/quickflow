@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { track } from "@vercel/analytics";
 import {
   obtenerEstadoNegocio,
   obtenerResumenHorariosVisible,
@@ -67,13 +68,22 @@ export function HeroInicio({ negocio }: HeroInicioProps) {
     () => obtenerEstadoNegocio(negocio, new Date(marcaTiempo)),
     [marcaTiempo, negocio],
   );
+
   const resumenHorarios = useMemo(
     () => obtenerResumenHorariosVisible(negocio),
     [negocio],
   );
 
+  useEffect(() => {
+    track("hero_visto", {
+      negocio: negocio.nombre?.trim() || "mandingas-la-37",
+      estado: estadoNegocio.estado,
+    });
+  }, [negocio.nombre, estadoNegocio.estado]);
+
   const labelEstado =
     estadoNegocio.estado === "cerrado" ? "Cerrado" : "Abierto ahora";
+
   const claseEstado =
     estadoNegocio.estado === "cerrado"
       ? {
@@ -100,6 +110,7 @@ export function HeroInicio({ negocio }: HeroInicioProps) {
     estadoNegocio.estado === "cerrado"
       ? "Ver menú (cerrado ahora)"
       : "Ver menú y hacer pedido";
+
   return (
     <>
       <style>{`
@@ -132,6 +143,7 @@ export function HeroInicio({ negocio }: HeroInicioProps) {
           }
         }
       `}</style>
+
       <section
         style={{
           minHeight: "100svh",
@@ -289,6 +301,13 @@ export function HeroInicio({ negocio }: HeroInicioProps) {
 
             <Link
               href="/demo"
+              onClick={() =>
+                track("click_ver_menu", {
+                  negocio: negocio.nombre?.trim() || "mandingas-la-37",
+                  estado: estadoNegocio.estado,
+                  origen: "hero",
+                })
+              }
               className="hero-cta-primario"
               style={estiloBotonPrimario}
             >
@@ -301,6 +320,13 @@ export function HeroInicio({ negocio }: HeroInicioProps) {
               )}`}
               target="_blank"
               rel="noreferrer"
+              onClick={() =>
+                track("click_whatsapp_hero", {
+                  negocio: negocio.nombre?.trim() || "mandingas-la-37",
+                  estado: estadoNegocio.estado,
+                  origen: "hero",
+                })
+              }
               className="hero-cta-secundario"
               style={estiloBotonSecundario}
             >

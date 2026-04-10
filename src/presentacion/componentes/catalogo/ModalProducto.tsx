@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import { Minus, Plus, X } from "lucide-react";
 import type { Producto } from "@/types/producto";
 import type { ConfiguracionProducto } from "@/types/configuracion-producto";
@@ -38,7 +39,9 @@ export function ModalProducto({
 }: ModalProductoProps) {
   const agregarItem = useCarritoStore((state) => state.agregarItem);
   const actualizarItem = useCarritoStore((state) => state.actualizarItem);
+
   const [imagenAmpliada, setImagenAmpliada] = useState(false);
+  const yaTrackeoVista = useRef(false);
 
   useEffect(() => {
     if (!abierto) return;
@@ -54,6 +57,25 @@ export function ModalProducto({
       document.body.style.touchAction = touchActionOriginal;
     };
   }, [abierto]);
+
+  useEffect(() => {
+    if (!abierto || !producto) {
+      yaTrackeoVista.current = false;
+      return;
+    }
+
+    if (!yaTrackeoVista.current) {
+      track("view_product", {
+        producto_id: producto.id,
+        producto: producto.nombre,
+        precio: producto.precio,
+        tiene_imagen: producto.imagen ? "si" : "no",
+        origen: "modal_producto",
+      });
+
+      yaTrackeoVista.current = true;
+    }
+  }, [abierto, producto]);
 
   if (!abierto || !producto || !configuracion) {
     return null;
@@ -113,11 +135,25 @@ export function ModalProducto({
 
   const handleAgregar = () => {
     const item = construirItemCarrito();
+
+    track("add_to_cart", {
+      producto_id: producto.id,
+      producto: producto.nombre,
+      cantidad: item.cantidad,
+      precio_base: producto.precio,
+      total_item: item.total,
+      tiene_adiciones: item.adiciones.length > 0 ? "si" : "no",
+      cantidad_adiciones: item.adiciones.length,
+      cantidad_salsas: item.salsas.length,
+      origen: itemIdEditar ? "editar_producto" : "nuevo_producto",
+    });
+
     if (itemIdEditar) {
       actualizarItem(itemIdEditar, item);
     } else {
       agregarItem(item);
     }
+
     cerrarModal();
   };
 
@@ -333,10 +369,12 @@ export function ModalProducto({
                     seleccion.grupoId === grupo.id &&
                     seleccion.opcionId === opcion.id,
                 );
+
                 const seleccion = configuracion.selecciones.find(
                   (item) =>
                     item.grupoId === grupo.id && item.opcionId === opcion.id,
                 );
+
                 const cantidad = seleccion?.cantidad ?? 0;
 
                 if (opcion.permiteCantidad) {
@@ -370,6 +408,7 @@ export function ModalProducto({
                         }}
                       >
                         <span style={{ lineHeight: 1.3 }}>{opcion.nombre}</span>
+
                         {opcion.precio > 0 && grupo.id !== "salsas" && (
                           <span style={{ fontWeight: 700 }}>
                             +${opcion.precio.toLocaleString()}
@@ -674,6 +713,7 @@ export function ModalProducto({
                   {producto.nombre}
                 </h3>
               </div>
+
               <button
                 type="button"
                 onClick={() => setImagenAmpliada(false)}
@@ -726,6 +766,7 @@ export function ModalProducto({
                 >
                   {producto.descripcion}
                 </p>
+
                 <p
                   style={{
                     margin: "10px 0 0",
