@@ -1,5 +1,3 @@
-// reglasDomicilio.ts
-
 export type ReglaDomicilio = {
   zona: string;
   calleDesde: number;
@@ -24,16 +22,6 @@ export type LimitesCobertura = {
   carreraMax: number;
 };
 
-/**
- * Cobertura total definida contigo:
- * - Sur: calle 65F -> base numérica 65
- * - Norte: calle 98
- * - Tope occidental / superior de carrera: 50
- *
- * carreraMin la dejamos en 28 porque:
- * - encaja con el histórico que vienes trabajando
- * - cubre el bloque operativo que mostraste
- */
 export const LIMITES_COBERTURA: LimitesCobertura = {
   calleMin: 65,
   calleMax: 98,
@@ -41,20 +29,11 @@ export const LIMITES_COBERTURA: LimitesCobertura = {
   carreraMax: 50,
 };
 
-/**
- * Punto base operativo.
- * Lo dejo en calle 80 / carrera 37 porque por las facturas y tu histórico
- * esa franja se comporta como zona núcleo.
- */
 export const ORIGEN_TARIFA = {
   calleBase: 80,
   carreraBase: 37,
 };
 
-/**
- * Bandas completas para NO dejar huecos.
- * Todo punto dentro de LIMITES_COBERTURA cae en una banda de calle y una de carrera.
- */
 const BANDAS_CALLE: Array<{ desde: number; hasta: number }> = [
   { desde: 65, hasta: 71 },
   { desde: 72, hasta: 77 },
@@ -77,16 +56,6 @@ type TarifaPorDistancia = {
   maxDist: number;
 };
 
-/**
- * Umbrales calibrados para que:
- * - núcleo inmediato = 3000
- * - franja cercana extendida = 4000
- * - media = 5000
- * - lejana = 6000
- * - borde máximo = 7000
- *
- * Esto reemplaza reglas "isla" y vuelve el sistema consistente.
- */
 const TARIFAS_POR_DISTANCIA: TarifaPorDistancia[] = [
   { zona: "Zona 1", valor: 3000, maxDist: 6 },
   { zona: "Zona 2", valor: 4000, maxDist: 11 },
@@ -96,14 +65,24 @@ const TARIFAS_POR_DISTANCIA: TarifaPorDistancia[] = [
 ];
 
 /**
- * Excepciones manuales.
- * Déjalas vacías por ahora o empieza a llenarlas con direcciones donde
- * operación cobre distinto al cálculo automático.
+ * Casos reales validados por operación.
+ * Estas excepciones tienen prioridad sobre el cálculo automático.
  */
 export const EXCEPCIONES_DOMICILIO: ExcepcionDomicilio[] = [
-  // Ejemplos futuros:
-  // { calle: 81, carrera: 45, valor: 4000, zona: "Zona 2", motivo: "histórico real" },
-  // { calle: 91, carrera: 34, valor: 7000, zona: "Zona 5", motivo: "franja alta" },
+  {
+    calle: 80,
+    carrera: 45,
+    valor: 5000,
+    zona: "Zona 3",
+    motivo: "Precio real validado por operación para Calle 80 con 45.",
+  },
+  {
+    calle: 83,
+    carrera: 39,
+    valor: 3000,
+    zona: "Zona 1",
+    motivo: "Precio real validado por operación para Calle 83 con 39.",
+  },
 ];
 
 function clamp(n: number, min: number, max: number): number {
@@ -123,10 +102,6 @@ function estaDentroDeCobertura(calle: number, carrera: number): boolean {
   );
 }
 
-/**
- * Distancia tipo Manhattan por cuadrícula.
- * Para este catálogo es la heurística más útil sin mapas pagos.
- */
 function distanciaEnBloques(calle: number, carrera: number): number {
   const calleN = Math.round(calle);
   const carreraN = Math.round(carrera);
@@ -138,8 +113,6 @@ function distanciaEnBloques(calle: number, carrera: number): number {
 }
 
 function tarifaPorDistancia(calle: number, carrera: number) {
-  // Regla estructural: franja alta de carrera (46-50) se cobra como Zona 5.
-  // Esto evita depender de excepciones puntuales para esa zona.
   if (Math.round(carrera) >= 46) {
     return {
       distancia: distanciaEnBloques(calle, carrera),
@@ -187,10 +160,6 @@ function tarifaParaCentroDeRectangulo(
   return tarifaPorDistancia(calleCentro, carreraCentro);
 }
 
-/**
- * Reglas completas SIN HUECOS.
- * Cada intersección calle x carrera tiene una tarifa consistente.
- */
 export const REGLAS_DOMICILIO: ReglaDomicilio[] = (() => {
   const bandasCalle = BANDAS_CALLE.map((b) => ({
     desde: clamp(
@@ -243,9 +212,6 @@ export const REGLAS_DOMICILIO: ReglaDomicilio[] = (() => {
   return reglas;
 })();
 
-/**
- * Resultado rico para usar en UI, WhatsApp y trazabilidad.
- */
 export type ResultadoDomicilio = {
   direccion: string;
   calle: number | null;
@@ -258,11 +224,6 @@ export type ResultadoDomicilio = {
   fuePorExcepcion: boolean;
 };
 
-/**
- * Esta función recibe calle y carrera ya extraídas desde tu parser o cálculo.
- * Si en tu flujo actual calcularDomicilio ya extrae calle/carrera desde la dirección,
- * puedes reutilizar esta misma lógica por dentro.
- */
 export function resolverDomicilioPorCoordenadas(params: {
   direccion: string;
   calle: number | null;
@@ -316,8 +277,6 @@ export function resolverDomicilioPorCoordenadas(params: {
   }
 
   const tarifa = tarifaPorDistancia(calle, carrera);
-
-  // Si está en borde del sistema, puedes pedir confirmación.
   const distancia = distanciaEnBloques(calle, carrera);
   const requiereConfirmacion = distancia >= 20;
 

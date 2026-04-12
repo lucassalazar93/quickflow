@@ -15,8 +15,9 @@ export default async function PaginaNegocio({
   }
 
   const { negocio } = await params;
+  const slugNormalizado = decodeURIComponent(negocio).trim().toLowerCase();
 
-  const configuracion = cargarNegocio(negocio);
+  const configuracion = cargarNegocio(slugNormalizado);
 
   if (!configuracion) {
     notFound();

@@ -103,4 +103,19 @@ describe("integración parseDireccion + calcularDomicilio", () => {
     expect(resultado.valor).toBe(7000);
     expect(resultado.requiereConfirmacion).toBe(false);
   });
+
+  it("cobra 4000 para Calle 84c #32a-28", () => {
+    const entrada = "Calle 84c #32a-28";
+    const analisis = procesarDireccionUsuario(entrada);
+    const resultado = calcularDomicilio({
+      direccion: analisis.direccionInterpretada,
+    });
+
+    expect(analisis.direccionInterpretada).toBe("calle 84c # 32a-28");
+    expect(analisis.calle).toBe(84);
+    expect(analisis.carrera).toBe(32);
+    expect(resultado.zona).toBe("Zona 2");
+    expect(resultado.valor).toBe(4000);
+    expect(resultado.requiereConfirmacion).toBe(false);
+  });
 });

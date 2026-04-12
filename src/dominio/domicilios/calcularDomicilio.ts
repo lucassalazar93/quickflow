@@ -1,7 +1,5 @@
 import {
-  EXCEPCIONES_DOMICILIO,
-  LIMITES_COBERTURA,
-  REGLAS_DOMICILIO,
+  resolverDomicilioPorCoordenadas,
 } from "./reglasDomicilio";
 import { procesarDireccionUsuario } from "./parseDireccion";
 
@@ -94,66 +92,28 @@ function calcularDomicilioPorTexto(
     };
   }
 
-  const estaDentroCoberturaGlobal =
-    calle >= LIMITES_COBERTURA.calleMin &&
-    calle <= LIMITES_COBERTURA.calleMax &&
-    carrera >= LIMITES_COBERTURA.carreraMin &&
-    carrera <= LIMITES_COBERTURA.carreraMax;
+  const resolucion = resolverDomicilioPorCoordenadas({
+    direccion: "",
+    calle,
+    carrera,
+  });
 
-  if (!estaDentroCoberturaGlobal) {
+  if (resolucion.fueraDeCobertura || resolucion.valor === null || !resolucion.zona) {
     return {
       estado: "OK",
       zona: "Fuera de zona",
       valor: TARIFA_MINIMA,
       requiereConfirmacion: true,
-      mensaje:
-        "La dirección está fuera de la cobertura habitual. El pedido requiere confirmación por parte de la tienda.",
-    };
-  }
-
-  const calleN = Math.round(calle);
-  const carreraN = Math.round(carrera);
-
-  const excepcion = EXCEPCIONES_DOMICILIO.find(
-    (item) => item.calle === calleN && item.carrera === carreraN,
-  );
-
-  if (excepcion) {
-    return {
-      estado: "OK",
-      zona: excepcion.zona,
-      valor: excepcion.valor,
-      requiereConfirmacion: false,
-      mensaje: excepcion.motivo ?? "Domicilio confirmado según excepción.",
-    };
-  }
-
-  const reglaEncontrada = REGLAS_DOMICILIO.find((regla) => {
-    return (
-      calle >= regla.calleDesde &&
-      calle <= regla.calleHasta &&
-      carrera >= regla.carreraDesde &&
-      carrera <= regla.carreraHasta
-    );
-  });
-
-  if (!reglaEncontrada) {
-    return {
-      estado: "OK",
-      zona: "Zona no definida",
-      valor: TARIFA_MINIMA,
-      requiereConfirmacion: true,
-      mensaje:
-        "La dirección no coincide con una zona exacta. El domicilio debe ser validado por la tienda.",
+      mensaje: resolucion.motivo,
     };
   }
 
   return {
     estado: "OK",
-    zona: reglaEncontrada.zona,
-    valor: reglaEncontrada.valor,
-    requiereConfirmacion: false,
-    mensaje: "Domicilio confirmado según zona de cobertura.",
+    zona: resolucion.zona,
+    valor: resolucion.valor,
+    requiereConfirmacion: resolucion.requiereConfirmacion,
+    mensaje: resolucion.motivo,
   };
 }
 

@@ -20,6 +20,27 @@ const NEGOCIOS: Record<string, ConfiguracionNegocio> = {
   },
 };
 
+function normalizarSlug(slug: string): string {
+  return decodeURIComponent(slug).trim().toLowerCase();
+}
+
 export function cargarNegocio(slug: string): ConfiguracionNegocio | null {
-  return NEGOCIOS[slug] ?? null;
+  const slugNormalizado = normalizarSlug(slug);
+
+  if (!slugNormalizado) {
+    return null;
+  }
+
+  const porClave = NEGOCIOS[slugNormalizado];
+
+  if (porClave) {
+    return porClave;
+  }
+
+  const porSlugNegocio = Object.values(NEGOCIOS).find(
+    (configuracion) =>
+      normalizarSlug(configuracion.negocio.slug) === slugNormalizado,
+  );
+
+  return porSlugNegocio ?? null;
 }

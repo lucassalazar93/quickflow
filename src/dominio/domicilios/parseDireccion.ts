@@ -47,7 +47,7 @@ function capitalizarDireccion(texto: string): string {
   return texto
     .split(" ")
     .map((parte) => {
-      if (["#"].includes(parte)) return parte;
+      if (parte === "#") return parte;
       if (/^\d+[a-z]?$/.test(parte)) return parte.toUpperCase();
       return parte.charAt(0).toUpperCase() + parte.slice(1);
     })
@@ -66,6 +66,14 @@ function construirDireccionNormalizada(
   placa: string,
 ): string {
   return `${tipoVia} ${viaPrincipal} # ${viaSecundaria}-${placa}`;
+}
+
+function construirDireccionCon(
+  tipoVia: "carrera" | "calle",
+  viaPrincipal: string,
+  cruce: string,
+): string {
+  return `${tipoVia} ${viaPrincipal} con ${cruce}`;
 }
 
 function calcularNivelConfianza(
@@ -267,22 +275,56 @@ function interpretarDireccion(textoNormalizado: string): {
     };
   }
 
-  if (
-    /\b(carrera|calle)\s+\d{1,3}[a-z]?\s+con\s+\d{1,3}[a-z]?\b/.test(
-      textoNormalizado,
-    )
-  ) {
-    const tipoVia = textoNormalizado.includes("carrera") ? "carrera" : "calle";
+  const patronViaCon = textoNormalizado.match(
+    /\b(carrera|calle)\s+(\d{1,3}[a-z]?)\s+con\s+(\d{1,3}[a-z]?)\b/,
+  );
+
+  if (patronViaCon) {
+    const tipoVia = patronViaCon[1] as "carrera" | "calle";
+    const viaPrincipal = patronViaCon[2];
+    const cruce = patronViaCon[3];
 
     return {
-      direccionInterpretada: textoNormalizado,
-      puntajeConfianza: 55,
+      direccionInterpretada: construirDireccionCon(
+        tipoVia,
+        viaPrincipal,
+        cruce,
+      ),
+      puntajeConfianza: 82,
       tipoVia,
-      calle: null,
-      carrera: null,
-      requiereConfirmacion: true,
-      motivoConfirmacion:
-        "La dirección usa 'con' y no permite estimar placa exacta para calcular domicilio.",
+      calle:
+        tipoVia === "calle"
+          ? extraerNumeroBase(viaPrincipal)
+          : extraerNumeroBase(cruce),
+      carrera:
+        tipoVia === "carrera"
+          ? extraerNumeroBase(viaPrincipal)
+          : extraerNumeroBase(cruce),
+      requiereConfirmacion: false,
+      motivoConfirmacion: "",
+    };
+  }
+
+  const patronSoloCon = textoNormalizado.match(
+    /\b(\d{1,3}[a-z]?)\s+con\s+(\d{1,3}[a-z]?)\b/,
+  );
+
+  if (patronSoloCon) {
+    const calleValor = patronSoloCon[1];
+    const carreraValor = patronSoloCon[2];
+
+    return {
+      direccionInterpretada: construirDireccionCon(
+        "calle",
+        calleValor,
+        carreraValor,
+      ),
+      puntajeConfianza: 72,
+      tipoVia: "calle",
+      calle: extraerNumeroBase(calleValor),
+      carrera: extraerNumeroBase(carreraValor),
+      requiereConfirmacion: false,
+      motivoConfirmacion: "",
     };
   }
 
