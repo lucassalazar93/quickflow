@@ -4,11 +4,12 @@ export const GRUPOS_ADICIONES: Record<string, GrupoAdiciones> = {
   salsas: {
     id: "salsas",
     nombre: "Salsas",
-    descripcion: "Puedes elegir las que quieras o pedir sin salsas",
-    obligatorio: false,
+    descripcion: "Selecciona tus salsas o elige sin salsa",
+    obligatorio: true,
     tipoSeleccion: "multiple",
-    minSeleccion: 0,
+    minSeleccion: 1,
     opciones: [
+      { id: "sin-salsa", nombre: "Sin salsa", precio: 0 },
       { id: "rosada", nombre: "Rosada", precio: 0 },
       { id: "pina", nombre: "Piña", precio: 0 },
       { id: "bbq", nombre: "BBQ", precio: 0 },
@@ -52,25 +53,25 @@ export const GRUPOS_ADICIONES: Record<string, GrupoAdiciones> = {
       {
         id: "chorizo-ternera",
         nombre: "Chorizo de ternera",
-        precio: 6000,
+        precio: 7000,
         permiteCantidad: true,
       },
       {
         id: "chorizo-pollo",
         nombre: "Chorizo de pollo",
-        precio: 6000,
+        precio: 7000,
         permiteCantidad: true,
       },
       {
         id: "arepaburger",
         nombre: "Arepaburger",
-        precio: 6000,
+        precio: 7000,
         permiteCantidad: true,
       },
       {
         id: "longaniza",
         nombre: "Longaniza",
-        precio: 6000,
+        precio: 7000,
         permiteCantidad: true,
       },
       {

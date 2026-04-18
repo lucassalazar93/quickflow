@@ -238,7 +238,33 @@ export function PaginaNegocioClient({
       opcionId,
     });
 
-    setConfiguracionActiva(nueva);
+    let nuevasSelecciones = nueva.selecciones;
+
+    if (grupoId === "salsas") {
+      const tieneSinSalsa = nuevasSelecciones.some(
+        (seleccion) =>
+          seleccion.grupoId === "salsas" && seleccion.opcionId === "sin-salsa",
+      );
+
+      if (opcionId === "sin-salsa" && tieneSinSalsa) {
+        nuevasSelecciones = nuevasSelecciones.filter(
+          (seleccion) =>
+            seleccion.grupoId !== "salsas" || seleccion.opcionId === "sin-salsa",
+        );
+      }
+
+      if (opcionId !== "sin-salsa") {
+        nuevasSelecciones = nuevasSelecciones.filter(
+          (seleccion) =>
+            !(seleccion.grupoId === "salsas" && seleccion.opcionId === "sin-salsa"),
+        );
+      }
+    }
+
+    setConfiguracionActiva({
+      ...nueva,
+      selecciones: nuevasSelecciones,
+    });
   };
 
   const cambiarCantidadOpcion = (

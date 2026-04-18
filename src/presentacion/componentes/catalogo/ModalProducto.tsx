@@ -89,6 +89,22 @@ export function ModalProducto({
   const grupos =
     producto.gruposAdicionesIds?.map((id) => GRUPOS_ADICIONES[id]) ?? [];
 
+  const gruposObligatoriosPendientes = grupos.filter((grupo) => {
+    if (!grupo.obligatorio) {
+      return false;
+    }
+
+    const seleccionadas = configuracion.selecciones.filter(
+      (seleccion) => seleccion.grupoId === grupo.id,
+    ).length;
+
+    const minimo = grupo.minSeleccion ?? 1;
+
+    return seleccionadas < minimo;
+  });
+
+  const puedeAgregarAlPedido = gruposObligatoriosPendientes.length === 0;
+
   const construirItemCarrito = () => {
     const gruposPorId = new Map(grupos.map((grupo) => [grupo.id, grupo]));
 
@@ -134,6 +150,10 @@ export function ModalProducto({
   };
 
   const handleAgregar = () => {
+    if (!puedeAgregarAlPedido) {
+      return;
+    }
+
     const item = construirItemCarrito();
 
     track("add_to_cart", {
@@ -334,23 +354,59 @@ export function ModalProducto({
               }}
             >
               <span>{grupo.nombre}</span>
-              <span
+              <div
                 style={{
-                  fontSize: "12px",
-                  padding: "4px 10px",
-                  borderRadius: "999px",
-                  background: "var(--color-fondo)",
-                  border: "1px solid var(--color-borde)",
-                  color: "var(--color-texto-secundario)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                {
-                  configuracion.selecciones.filter(
-                    (seleccion) => seleccion.grupoId === grupo.id,
-                  ).length
-                }
-              </span>
+                {grupo.obligatorio && (
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      padding: "3px 8px",
+                      borderRadius: "999px",
+                      background: "rgba(255, 0, 0, 0.08)",
+                      border: "1px solid rgba(255, 0, 0, 0.25)",
+                      color: "var(--color-primario)",
+                    }}
+                  >
+                    Obligatorio
+                  </span>
+                )}
+
+                <span
+                  style={{
+                    fontSize: "12px",
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    background: "var(--color-fondo)",
+                    border: "1px solid var(--color-borde)",
+                    color: "var(--color-texto-secundario)",
+                  }}
+                >
+                  {
+                    configuracion.selecciones.filter(
+                      (seleccion) => seleccion.grupoId === grupo.id,
+                    ).length
+                  }
+                </span>
+              </div>
             </summary>
+
+            {grupo.descripcion && (
+              <p
+                style={{
+                  margin: "0 0 10px",
+                  fontSize: "12px",
+                  color: "var(--color-texto-secundario)",
+                  lineHeight: 1.35,
+                }}
+              >
+                {grupo.descripcion}
+              </p>
+            )}
 
             <div
               style={{
@@ -640,21 +696,38 @@ export function ModalProducto({
           <button
             type="button"
             onClick={handleAgregar}
+            disabled={!puedeAgregarAlPedido}
             style={{
               width: "100%",
               border: "none",
               borderRadius: "16px",
               padding: "16px 18px",
-              background: "var(--color-primario)",
+              background: puedeAgregarAlPedido
+                ? "var(--color-primario)"
+                : "var(--color-borde)",
               color: "#ffffff",
               fontSize: "16px",
               fontWeight: 800,
-              cursor: "pointer",
+              cursor: puedeAgregarAlPedido ? "pointer" : "not-allowed",
+              opacity: puedeAgregarAlPedido ? 1 : 0.85,
               boxShadow: "var(--sombra-suave)",
             }}
           >
             {accionPrincipalLabel} - ${total.toLocaleString()}
           </button>
+
+          {!puedeAgregarAlPedido && (
+            <p
+              style={{
+                margin: "8px 4px 0",
+                fontSize: "12px",
+                color: "var(--color-primario)",
+                fontWeight: 600,
+              }}
+            >
+              Debes completar: {gruposObligatoriosPendientes.map((grupo) => grupo.nombre).join(", ")}.
+            </p>
+          )}
         </div>
       </div>
 

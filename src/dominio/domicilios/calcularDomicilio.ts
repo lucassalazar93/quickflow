@@ -1,6 +1,4 @@
-import {
-  resolverDomicilioPorCoordenadas,
-} from "./reglasDomicilio";
+import { resolverDomicilioPorCoordenadas } from "./reglasDomicilio";
 import { procesarDireccionUsuario } from "./parseDireccion";
 
 export type ResultadoDomicilio = {
@@ -98,7 +96,11 @@ function calcularDomicilioPorTexto(
     carrera,
   });
 
-  if (resolucion.fueraDeCobertura || resolucion.valor === null || !resolucion.zona) {
+  if (
+    resolucion.fueraDeCobertura ||
+    resolucion.valor === null ||
+    !resolucion.zona
+  ) {
     return {
       estado: "OK",
       zona: "Fuera de zona",
