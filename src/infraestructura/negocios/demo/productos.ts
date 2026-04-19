@@ -194,7 +194,7 @@ export const productosDemo: Producto[] = [
     nombre: "PATACON MIXTO",
     descripcion:
       "queso, tocineta, pollo desmechado, carne desmechada, ensalada",
-    precio: 18000,
+    precio: 20000,
     imagen: "/productos/pataconmixto.webp",
     categoriaId: "patacones",
     gruposAdicionesIds: ["salsas", "adiciones"],
