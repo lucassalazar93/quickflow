@@ -1,148 +1,81 @@
 import { Plus } from "lucide-react";
-import { BotonAnimado } from "@/presentacion/componentes/comunes/BotonAnimado";
+import type { Producto } from "@/types/producto";
+import { Foto } from "@/presentacion/componentes/comunes/Foto";
+import { nombreVisible, pesos } from "@/presentacion/utilidades/formato";
 
 type Props = {
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  imagen: string;
-  onAbrir?: () => void;
-  onAgregar?: () => void;
+  producto: Producto;
+  // Unidades de este producto que ya están en el pedido
+  enPedido: number;
+  esBebida: boolean;
+  onElegir: (producto: Producto) => void;
 };
 
 export function TarjetaProducto({
-  nombre,
-  descripcion,
-  precio,
-  imagen,
-  onAbrir,
-  onAgregar,
+  producto,
+  enPedido,
+  esBebida,
+  onElegir,
 }: Props) {
-  const handleClick = () => {
-    onAbrir?.();
-  };
+  const nombre = nombreVisible(producto.nombre);
 
   return (
-    <article
-      style={{
-        display: "grid",
-        gridTemplateColumns: "96px 1fr auto",
-        gap: "16px",
-        alignItems: "center",
-        background: "var(--color-superficie)",
-        border: "1px solid var(--color-borde)",
-        borderRadius: "24px",
-        padding: "16px",
-        boxShadow: "var(--sombra-suave)",
-      }}
+    <button
+      type="button"
+      className={`card${enPedido > 0 ? " tiene" : ""}`}
+      onClick={() => onElegir(producto)}
+      aria-label={`${nombre}, ${pesos(producto.precio)}`}
     >
-      <div
-        onClick={handleClick}
-        style={{
-          width: "96px",
-          height: "96px",
-          borderRadius: "18px",
-          overflow: "hidden",
-          background: "#eef1f4",
-          flexShrink: 0,
-          cursor: onAbrir ? "pointer" : "default",
-          transition: onAbrir ? "transform 0.2s ease" : "none",
-        }}
-        onMouseEnter={(e) => {
-          if (onAbrir) {
-            (e.currentTarget as HTMLElement).style.transform = "scale(1.05)";
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (onAbrir) {
-            (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-          }
-        }}
+      <span className="info">
+        <h3>{nombre}</h3>
+        {!esBebida && producto.descripcion && <p>{producto.descripcion}</p>}
+        <span className="precio num">{pesos(producto.precio)}</span>
+      </span>
+
+      <Foto src={producto.imagen} completa={esBebida} />
+
+      {/* La clave cambia con la cantidad para que el número rebote al sumar */}
+      <span
+        key={enPedido}
+        className={`mas num${enPedido > 0 ? " tiene bump" : ""}`}
+        aria-hidden="true"
       >
-        <img
-          src={imagen}
-          alt={nombre}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            objectPosition: "center",
-          }}
-        />
-      </div>
+        {enPedido > 0 ? enPedido : <Plus size={20} />}
+      </span>
+    </button>
+  );
+}
 
-      <div
-        onClick={handleClick}
-        style={{
-          minWidth: 0,
-          cursor: onAbrir ? "pointer" : "default",
-          transition: onAbrir ? "opacity 0.2s ease" : "none",
-        }}
-        onMouseEnter={(e) => {
-          if (onAbrir) {
-            (e.currentTarget as HTMLElement).style.opacity = "0.85";
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (onAbrir) {
-            (e.currentTarget as HTMLElement).style.opacity = "1";
-          }
-        }}
-      >
-        <h3
-          style={{
-            marginBottom: "6px",
-            fontSize: "18px",
-            fontWeight: 800,
-            lineHeight: 1.1,
-          }}
-        >
-          {nombre}
-        </h3>
+type PropsMosaico = {
+  producto: Producto;
+  esBebida: boolean;
+  // Número o marca que reemplaza al "+" cuando ya está elegido
+  marca?: React.ReactNode;
+  onElegir: (producto: Producto) => void;
+};
 
-        <p
-          style={{
-            color: "var(--color-texto-secundario)",
-            fontSize: "14px",
-            lineHeight: 1.45,
-            marginBottom: "12px",
-          }}
-        >
-          {descripcion}
-        </p>
+// Sugerencia compacta: foto, precio y un solo gesto
+export function MosaicoProducto({
+  producto,
+  esBebida,
+  marca,
+  onElegir,
+}: PropsMosaico) {
+  const nombre = nombreVisible(producto.nombre);
 
-        <p
-          style={{
-            color: "var(--color-primario)",
-            fontSize: "18px",
-            fontWeight: 800,
-          }}
-        >
-          ${precio.toLocaleString("es-CO")}
-        </p>
-      </div>
-
-      <BotonAnimado
-        type="button"
-        onClick={onAgregar}
-        style={{
-          width: "52px",
-          height: "52px",
-          minWidth: "52px",
-          borderRadius: "18px",
-          background: "var(--color-primario)",
-          color: "#ffffff",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "32px",
-          lineHeight: 1,
-          boxShadow: "var(--sombra-media)",
-          cursor: "pointer",
-        }}
-      >
-        <Plus size={22} aria-hidden="true" />
-      </BotonAnimado>
-    </article>
+  return (
+    <button
+      type="button"
+      className={`tile${marca ? " on" : ""}`}
+      onClick={() => onElegir(producto)}
+      aria-label={`Agregar ${nombre}, ${pesos(producto.precio)}`}
+    >
+      <Foto src={producto.imagen} completa={esBebida} prioritaria />
+      <span className="mk num" aria-hidden="true">
+        {marca || <Plus size={18} />}
+      </span>
+      <b className="num">{pesos(producto.precio)}</b>
+      <small>{nombre}</small>
+    </button>
   );
 }

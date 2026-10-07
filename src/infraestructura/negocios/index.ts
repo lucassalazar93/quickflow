@@ -5,11 +5,14 @@ import type { Producto } from "@/types/producto";
 import { negocioDemo } from "./demo/negocio";
 import { categoriasDemo } from "./demo/categorias";
 import { productosDemo } from "./demo/productos";
+import { categoriaBebidasDemo, masPedidosDemo } from "./demo/destacados";
 
 export type ConfiguracionNegocio = {
   negocio: Negocio;
   categorias: Categoria[];
   productos: Producto[];
+  masPedidos: string[];
+  categoriaBebidasId?: string;
 };
 
 const NEGOCIOS: Record<string, ConfiguracionNegocio> = {
@@ -17,6 +20,8 @@ const NEGOCIOS: Record<string, ConfiguracionNegocio> = {
     negocio: negocioDemo,
     categorias: categoriasDemo,
     productos: productosDemo,
+    masPedidos: masPedidosDemo,
+    categoriaBebidasId: categoriaBebidasDemo,
   },
 };
 

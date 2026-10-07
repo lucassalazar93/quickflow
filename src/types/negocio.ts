@@ -15,7 +15,7 @@ export type HorariosPorDia = {
 };
 
 export type ConfiguracionDomicilios = {
-  inicio: string; // hora desde la que se reciben domicilios, ej: "19:40"
+  inicio: string; // hora desde la que se reciben domicilios, ej: "19:20"
   corteAntesDeCierreMinutos: number; // ej: 20
 };
 
@@ -25,11 +25,21 @@ export type ConfiguracionHoraria = {
   domicilios: ConfiguracionDomicilios;
 };
 
+export type ImagenesAnfitriona = {
+  cara: string;
+  busto: string;
+  cuerpo: string;
+};
+
 export type Negocio = {
   id: string;
   nombre: string;
   slug: string;
   logo: string;
+  // Logo recortado y con transparencia para la pantalla de inicio
+  logoRotulo?: string;
+  // Personaje que da la bienvenida y acompaña los avisos
+  anfitriona?: ImagenesAnfitriona;
   subtitulo: string;
   colorPrimario: string;
   colorSecundario: string;

@@ -5,7 +5,6 @@ import {
   procesarDireccionUsuario,
   type AnalisisDireccion,
 } from "@/dominio/domicilios/parseDireccion";
-import styles from "./ModalCarrito.module.css";
 
 interface InputDireccionAutocompleteProps {
   id?: string;
@@ -63,11 +62,10 @@ export function InputDireccionAutocomplete({
   };
 
   return (
-    <div className={styles.autoWrap}>
+    <div className="auto-wrap">
       <input
         id={id}
         type="text"
-        className={styles.input}
         value={value}
         onChange={handleChange}
         onFocus={() => setMostrarSugerencias(true)}
@@ -76,18 +74,17 @@ export function InputDireccionAutocomplete({
       />
 
       {analisisDebounced?.direccionInterpretada && (
-        <p className={styles.ayudaDireccion}>
+        <p className="auto-ayuda">
           Dirección interpretada: {analisisDebounced.direccionInterpretada}
         </p>
       )}
 
       {mostrarSugerencias && sugerencias.length > 0 && (
-        <div className={styles.sugerencias}>
+        <div className="auto-sug">
           {sugerencias.map((sugerencia) => (
             <button
               key={sugerencia}
               type="button"
-              className={styles.sugerenciaItem}
               onClick={() => seleccionarSugerencia(sugerencia)}
             >
               {sugerencia}
@@ -97,7 +94,7 @@ export function InputDireccionAutocomplete({
       )}
 
       {analisisDebounced?.requiereConfirmacion && (
-        <p className={styles.alertaDireccion}>
+        <p className="auto-alerta">
           {analisisDebounced.motivoConfirmacion}
         </p>
       )}

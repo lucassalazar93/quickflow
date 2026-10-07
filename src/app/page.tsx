@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { HeroInicio } from "@/presentacion/componentes/inicio/HeroInicio";
-import { FooterQuickFlow } from "@/presentacion/componentes/inicio/FooterQuickFlow";
-import { negocioDemo } from "@/infraestructura/negocios/demo/negocio";
+import { notFound, redirect } from "next/navigation";
+import { cargarNegocio } from "@/infraestructura/negocios";
 import { debeBloquearAcceso } from "@/dominio/seguridad/evaluarBloqueoServer";
+import { PaginaNegocioClient } from "./[negocio]/PaginaNegocioClient";
 
 export const metadata: Metadata = {
   title: "Mandingas La 37",
@@ -26,6 +25,7 @@ export const metadata: Metadata = {
   },
 };
 
+// La raíz abre directo el catálogo: la pantalla de inicio va dentro de él
 export default async function Home() {
   const bloqueada = await debeBloquearAcceso();
 
@@ -33,10 +33,19 @@ export default async function Home() {
     redirect("/bloqueado");
   }
 
+  const configuracion = cargarNegocio("demo");
+
+  if (!configuracion) {
+    notFound();
+  }
+
   return (
-    <>
-      <HeroInicio negocio={negocioDemo} />
-      <FooterQuickFlow />
-    </>
+    <PaginaNegocioClient
+      negocio={configuracion.negocio}
+      categorias={configuracion.categorias}
+      productos={configuracion.productos}
+      masPedidos={configuracion.masPedidos}
+      categoriaBebidasId={configuracion.categoriaBebidasId}
+    />
   );
 }

@@ -44,6 +44,8 @@ select {
 button {
   border: none;
   background: none;
+  /* iOS pinta el texto de los botones en azul si no se hereda el color */
+  color: inherit;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }

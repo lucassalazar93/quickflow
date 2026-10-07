@@ -4,7 +4,13 @@ export const negocioDemo: Negocio = {
   id: "demo",
   nombre: "MANDINGAS La 37",
   slug: "demo",
-  logo: "/logo-demo.png",
+  logo: "/logo-chico.webp",
+  logoRotulo: "/logo-rotulo.webp",
+  anfitriona: {
+    cara: "/anfitriona/cara.webp",
+    busto: "/anfitriona/busto.webp",
+    cuerpo: "/anfitriona/cuerpo.webp",
+  },
   subtitulo: "Pide fácil por WhatsApp y recibe tu comida rápido.",
   colorPrimario: "#E1251B",
   colorSecundario: "#FFD54A",
@@ -32,7 +38,7 @@ export const negocioDemo: Negocio = {
     },
 
     domicilios: {
-      inicio: "19:40", // empiezan domicilios
+      inicio: "19:20", // empiezan domicilios
       corteAntesDeCierreMinutos: 20, // se cierran 20 min antes
     },
   },

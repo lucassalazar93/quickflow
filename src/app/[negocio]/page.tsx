@@ -23,13 +23,21 @@ export default async function PaginaNegocio({
     notFound();
   }
 
-  const { negocio: negocioData, categorias, productos } = configuracion;
+  const {
+    negocio: negocioData,
+    categorias,
+    productos,
+    masPedidos,
+    categoriaBebidasId,
+  } = configuracion;
 
   return (
     <PaginaNegocioClient
       negocio={negocioData}
       categorias={categorias}
       productos={productos}
+      masPedidos={masPedidos}
+      categoriaBebidasId={categoriaBebidasId}
     />
   );
 }
