@@ -15,13 +15,22 @@ export const metadata: Metadata = {
     siteName: "Mandingas La 37",
     images: [
       {
-        url: "https://quickflow-tau.vercel.app/logo-mandingas.png",
+        // JPG liviano de 1200x630: WhatsApp descarta las imágenes pesadas
+        url: "https://quickflow-tau.vercel.app/og-mandingas.jpg",
         width: 1200,
         height: 630,
+        alt: "Mandingas La 37",
+        type: "image/jpeg",
       },
     ],
     locale: "es_CO",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mandingas La 37",
+    description: "Pide tus productos favoritos de Mandingas por WhatsApp.",
+    images: ["https://quickflow-tau.vercel.app/og-mandingas.jpg"],
   },
 };
 

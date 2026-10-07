@@ -17,7 +17,7 @@ export async function generateMetadata({
 
   const { negocio } = configuracion;
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://quickflow.vercel.app";
+    process.env.NEXT_PUBLIC_BASE_URL || "https://quickflow-tau.vercel.app";
   const ogImageUrl = `${baseUrl}/og-mandingas.jpg`;
 
   return {
@@ -47,10 +47,6 @@ export async function generateMetadata({
       title: negocio.nombre,
       description: negocio.subtitulo,
       images: [ogImageUrl],
-    },
-
-    icons: {
-      icon: negocio.logo,
     },
   };
 }

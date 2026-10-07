@@ -17,7 +17,7 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    process.env.NEXT_PUBLIC_BASE_URL || "https://quickflow-tau.vercel.app",
   ),
 
   title: "QuickFlow - Pedidos por WhatsApp",
@@ -30,9 +30,6 @@ export const metadata: Metadata = {
     type: "website",
   },
 
-  icons: {
-    icon: "/logo-demo.png",
-  },
 };
 
 export const viewport: Viewport = {
