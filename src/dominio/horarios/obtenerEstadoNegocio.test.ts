@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { negocioDemo } from "../../infraestructura/negocios/demo/negocio";
 import { esFestivoColombia } from "./festivosColombia";
 import {
@@ -85,6 +85,35 @@ describe("obtenerEstadoNegocio", () => {
     expect(estadoEn("2026-10-13", "00:40").puedeRecibirDomicilios).toBe(true);
     expect(estadoEn("2026-10-13", "00:41").estado).toBe("domicilios_cerrados");
     expect(estadoEn("2026-10-13", "01:01").estado).toBe("cerrado");
+  });
+
+  describe("modo prueba (estado forzado por variable de entorno)", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("en desarrollo permite forzar el estado", () => {
+      vi.stubEnv("NEXT_PUBLIC_ESTADO_NEGOCIO_FORZADO", "cerrado");
+
+      // Lunes 8:00 PM: por horario estaría abierto
+      expect(estadoEn("2026-10-05", "20:00").estado).toBe("cerrado");
+    });
+
+    it("en producción se ignora y manda el horario real", () => {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.stubEnv("NEXT_PUBLIC_ESTADO_NEGOCIO_FORZADO", "abierto");
+      vi.stubEnv("APP_ESTADO_NEGOCIO_FORZADO", "abierto");
+
+      // Lunes 2:00 PM: cerrado aunque la variable diga "abierto"
+      const estado = estadoEn("2026-10-05", "14:00");
+
+      expect(estado.estado).toBe("cerrado");
+      expect(estado.mensaje).not.toContain("Modo prueba");
+      // Lunes 8:00 PM: abierto, sin textos de prueba
+      expect(estadoEn("2026-10-05", "20:00").lineaCorta).toBe(
+        "Domicilios hasta las 11:40 PM",
+      );
+    });
   });
 
   it("no depende de la zona horaria del dispositivo", () => {

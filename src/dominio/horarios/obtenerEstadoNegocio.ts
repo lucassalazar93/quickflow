@@ -60,6 +60,12 @@ function normalizarEstadoForzado(
 }
 
 function obtenerEstadoForzadoDesdeEnv(): ResultadoEstadoNegocio | null {
+  // El modo prueba es solo para desarrollo: en el sitio publicado manda
+  // siempre el horario real, aunque la variable siga definida en el hosting
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
+
   const estadoForzado =
     normalizarEstadoForzado(process.env.APP_ESTADO_NEGOCIO_FORZADO) ??
     normalizarEstadoForzado(process.env.NEXT_PUBLIC_ESTADO_NEGOCIO_FORZADO);
